@@ -1,18 +1,11 @@
-import { useEffect, useRef, useState } from "react";
-import {
-  Animated,
-  Dimensions,
-  Keyboard,
-  Modal,
-  Platform,
-  Pressable,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import * as Haptics from "expo-haptics";
+import { useState } from "react";
+import { Animated, Modal, Pressable, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { todayISO } from "@/lib/format";
+import { sanitizeAmountInput, todayISO } from "@/lib/format";
+import { useKeyboardLift } from "@/lib/useKeyboardLift";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { BudgetSheet } from "@/types";
 
@@ -32,40 +25,11 @@ export default function BudgetModal({
   const createBudgetSheet = useBudgetStore((s) => s.createBudgetSheet);
   const updateBudgetSheet = useBudgetStore((s) => s.updateBudgetSheet);
 
-  const translateY = useRef(new Animated.Value(0)).current;
-  const sheetHeight = useRef(0);
-  const fullWindowHeight = useRef(Dimensions.get("window").height);
+  const { translateY, handleSheetLayout, resetLift } = useKeyboardLift();
 
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const lift = (keyboardHeight: number) => {
-      const windowHeight = Dimensions.get("window").height;
-      const alreadyResized =
-        keyboardHeight > 0 &&
-        windowHeight + keyboardHeight <= fullWindowHeight.current + 10;
-      const target = alreadyResized
-        ? 0
-        : Math.min(
-            keyboardHeight,
-            Math.max(0, fullWindowHeight.current - sheetHeight.current)
-          );
-      Animated.timing(translateY, {
-        toValue: -target,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    };
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-    const showSub = Keyboard.addListener(showEvent, (e) => lift(e.endCoordinates.height));
-    const hideSub = Keyboard.addListener(hideEvent, () => lift(0));
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, [translateY]);
+  const [amountFocused, setAmountFocused] = useState(false);
 
   const parsed = parseFloat(value);
   const valid = !Number.isNaN(parsed) && parsed > 0;
@@ -76,6 +40,7 @@ export default function BudgetModal({
   };
 
   const handleClose = () => {
+    resetLift();
     setError(null);
     onClose();
   };
@@ -91,6 +56,9 @@ export default function BudgetModal({
       const today = todayISO();
       createBudgetSheet({ budget: parsed, startDate: today, endDate: today });
     }
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+      () => {}
+    );
     onClose();
   };
 
@@ -106,9 +74,7 @@ export default function BudgetModal({
         <Pressable className="flex-1" onPress={handleClose} />
 
         <Animated.View
-          onLayout={(e) => {
-            sheetHeight.current = e.nativeEvent.layout.height;
-          }}
+          onLayout={handleSheetLayout}
           style={{ transform: [{ translateY }] }}
         >
           <SafeAreaView edges={["bottom"]} className="bg-white rounded-t-3xl">
@@ -118,45 +84,65 @@ export default function BudgetModal({
               </View>
 
               <View className="mb-5 flex-row items-center justify-between">
-                <View>
-                  <Text className="text-[22px] font-bold text-ink-900">
-                    {mode === "edit" ? "Edit Budget" : "New Budget Sheet"}
-                  </Text>
-                  <Text className="mt-0.5 text-[13px] text-ink-400">
-                    {mode === "edit"
-                      ? "Update your budget goal"
-                      : "Set your budget for today"}
-                  </Text>
+                <View className="flex-row items-center">
+                  <View className="mr-3 h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50">
+                    <Ionicons name="wallet" size={20} color="#4f46e5" />
+                  </View>
+                  <View>
+                    <Text className="text-[22px] font-bold text-ink-900">
+                      {mode === "edit" ? "Edit Budget" : "New Budget"}
+                    </Text>
+                    <Text className="mt-0.5 text-[13px] text-ink-400">
+                      {mode === "edit"
+                        ? "Update your budget goal"
+                        : "Set your budget for today"}
+                    </Text>
+                  </View>
                 </View>
                 <Pressable
                   onPress={handleClose}
                   hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel="Close"
                   className="h-9 w-9 items-center justify-center rounded-full bg-ink-100"
                 >
-                  <Text className="text-[16px] text-ink-500">✕</Text>
+                  <Ionicons name="close" size={16} color="#64748b" />
                 </Pressable>
               </View>
 
               <Text className="mb-2 text-[13px] font-medium text-ink-500">
                 Budget Amount
               </Text>
-              <View className="mb-4 flex-row items-center rounded-2xl border border-ink-200 bg-ink-50 px-4">
+              <View
+                className={`mb-4 flex-row items-center rounded-2xl border bg-ink-50 px-4 ${
+                  amountFocused ? "border-indigo-500" : "border-ink-200"
+                }`}
+              >
                 <Text className="text-[24px] font-bold text-ink-400">₱</Text>
                 <TextInput
                   value={value}
-                  onChangeText={(t) => setValue(t.replace(/[^0-9.]/g, ""))}
+                  onChangeText={(t) => setValue(sanitizeAmountInput(t))}
+                  onFocus={() => setAmountFocused(true)}
+                  onBlur={() => setAmountFocused(false)}
                   placeholder="0.00"
                   placeholderTextColor="#94a3b8"
                   keyboardType="decimal-pad"
+                  autoFocus
                   className="ml-2 flex-1 py-4 text-[24px] font-bold text-ink-900"
                 />
               </View>
 
               {mode === "create" && (
-                <Text className="mb-4 text-[12px] text-ink-400">
-                  This budget is for today. Creating it closes the previous
-                  budget into your history.
-                </Text>
+                <View
+                  className="mb-4 flex-row items-start rounded-2xl px-3.5 py-3"
+                  style={{ backgroundColor: "#eef2ff" }}
+                >
+                  <Ionicons name="information-circle" size={15} color="#6366f1" />
+                  <Text className="ml-2 flex-1 text-[12px] leading-4 text-indigo-700">
+                    This budget is for today. Creating it closes the previous
+                    budget into your history.
+                  </Text>
+                </View>
               )}
 
               {error && (
@@ -167,7 +153,8 @@ export default function BudgetModal({
 
               <Pressable
                 onPress={handleSave}
-                disabled={!valid}
+                accessibilityRole="button"
+                style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}
                 className={`mb-2 items-center rounded-2xl py-4 ${
                   valid ? "bg-indigo-600" : "bg-ink-200"
                 }`}

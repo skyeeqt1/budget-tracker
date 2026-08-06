@@ -2,6 +2,20 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
 import { Platform } from "react-native";
 
+type IoniconName = keyof typeof Ionicons.glyphMap;
+
+interface TabIconProps {
+  focused: boolean;
+  color: string;
+  size: number;
+  active: IoniconName;
+  inactive: IoniconName;
+}
+
+function TabIcon({ focused, color, size, active, inactive }: TabIconProps) {
+  return <Ionicons name={focused ? active : inactive} size={size} color={color} />;
+}
+
 export default function TabLayout() {
   return (
     <Tabs
@@ -23,8 +37,14 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Home",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+          tabBarIcon: ({ focused, color, size }) => (
+            <TabIcon
+              focused={focused}
+              color={color}
+              size={size}
+              active="home"
+              inactive="home-outline"
+            />
           ),
         }}
       />
@@ -32,8 +52,14 @@ export default function TabLayout() {
         name="history"
         options={{
           title: "History",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list" size={size} color={color} />
+          tabBarIcon: ({ focused, color, size }) => (
+            <TabIcon
+              focused={focused}
+              color={color}
+              size={size}
+              active="list"
+              inactive="list-outline"
+            />
           ),
         }}
       />

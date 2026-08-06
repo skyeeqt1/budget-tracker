@@ -1,11 +1,13 @@
+// Reused across renders to avoid allocating a new Intl formatter per call.
+const CURRENCY_FORMATTER = new Intl.NumberFormat("en-PH", {
+  style: "currency",
+  currency: "PHP",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 export function formatCurrency(amount: number): string {
-  const formatter = new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-  return formatter.format(amount);
+  return CURRENCY_FORMATTER.format(amount);
 }
 
 export function todayISO(): string {
@@ -59,6 +61,24 @@ export function formatDateShort(isoDate: string): string {
   const date = new Date(Number(year), Number(month) - 1, Number(day));
   if (Number.isNaN(date.getTime())) return isoDate;
   return `${MONTHS_SHORT[date.getMonth()]} ${date.getDate()}`;
+}
+
+/** Full, friendly date like "Aug 6, 2026". */
+export function formatDateLong(isoDate: string): string {
+  const d = parseISO(isoDate);
+  if (Number.isNaN(d.getTime())) return isoDate;
+  return `${MONTHS_SHORT[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+}
+
+/**
+ * Keeps only digits and the first decimal point, so a value like "1.2.3"
+ * becomes "1.23" instead of being silently truncated by parseFloat.
+ */
+export function sanitizeAmountInput(raw: string): string {
+  const cleaned = raw.replace(/[^0-9.]/g, "");
+  const dot = cleaned.indexOf(".");
+  if (dot === -1) return cleaned;
+  return cleaned.slice(0, dot + 1) + cleaned.slice(dot + 1).replace(/\./g, "");
 }
 
 export function uid(): string {

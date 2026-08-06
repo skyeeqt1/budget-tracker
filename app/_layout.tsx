@@ -3,16 +3,27 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 
 import AppSplash from "@/components/AppSplash";
+import { useBudgetStore } from "@/store/useBudgetStore";
 
 import "../global.css";
 
 export default function RootLayout() {
-  const [splashDone, setSplashDone] = useState(false);
+  const hydrated = useBudgetStore((s) => s.hydrated);
+  const [timerDone, setTimerDone] = useState(false);
+  const [forceReady, setForceReady] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setSplashDone(true), 1400);
-    return () => clearTimeout(timer);
+    // Minimum brand-splash time.
+    const timer = setTimeout(() => setTimerDone(true), 1400);
+    // Safety net: never block the app if hydration is slow or fails silently.
+    const fallback = setTimeout(() => setForceReady(true), 3000);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(fallback);
+    };
   }, []);
+
+  const showSplash = !timerDone || (!hydrated && !forceReady);
 
   return (
     <>
@@ -21,7 +32,7 @@ export default function RootLayout() {
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="dark" />
-      {!splashDone && <AppSplash />}
+      {showSplash && <AppSplash />}
     </>
   );
 }

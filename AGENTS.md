@@ -24,7 +24,7 @@
 - Categories fixed: Internet, Electricity, Water Bill, Allowance, Grocery, Other. (`constants/categories.ts`)
 - Budget is for "today": start = end = today at creation. Do not add date pickers to the create modal.
 - **Active budget** = most recently created sheet (`currentSheet` selector, date-agnostic). It stays active until a new one is created, regardless of phone date changes.
-- Creating a new budget automatically **closes the previous sheet**: set its `endDate` to the day before the new sheet's start (clamped to never be before its own start). The previous sheet then lands in History.
+- Creating a new budget automatically **closes the previous sheet**: set its `endDate` to the new sheet's start date (the day it was closed, clamped to never be before its own start). The previous sheet then lands in History.
 - **History** shows only past (non-active) sheets, read-only — no delete. Group by sheet, sorted newest-first.
 - Expenses are shown against the sheet they were created under (via `sheetId`); never fall back to date-range matching.
 

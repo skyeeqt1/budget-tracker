@@ -1,8 +1,9 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useMemo } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { useMemo, useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import ProgressBar from "@/components/ProgressBar";
 import TransactionItem from "@/components/TransactionItem";
 import { formatCurrency, formatDateShort } from "@/lib/format";
 import {
@@ -17,6 +18,18 @@ export default function HistoryScreen() {
   const sheets = useBudgetStore((s) => s.sheets);
   const allExpenses = useBudgetStore((s) => s.expenses);
 
+  // Sheets whose expense list is expanded. Everything starts collapsed.
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   const pastSheets = useMemo(() => {
     const active = currentSheet(sheets);
     return sheets
@@ -26,6 +39,19 @@ export default function HistoryScreen() {
           b.startDate.localeCompare(a.startDate) || b.createdAt - a.createdAt
       );
   }, [sheets]);
+
+  const groups = useMemo(
+    () =>
+      pastSheets.map((sheet) => {
+        const sheetExpenses = expensesForSheet(allExpenses, sheet);
+        return {
+          sheet,
+          summary: computeSummary(sheet.budget, sheetExpenses),
+          expenses: sortNewest(sheetExpenses),
+        };
+      }),
+    [pastSheets, allExpenses]
+  );
 
   const hasAnySheet = sheets.length > 0;
 
@@ -37,7 +63,11 @@ export default function HistoryScreen() {
             History
           </Text>
           <Text className="mt-0.5 text-[14px] text-ink-400">
-            {pastSheets.length} past budget sheet(s)
+            {pastSheets.length === 0
+              ? "Your closed budgets will appear here"
+              : `${pastSheets.length} closed budget${
+                  pastSheets.length === 1 ? "" : "s"
+                }`}
           </Text>
         </View>
 
@@ -61,49 +91,92 @@ export default function HistoryScreen() {
               </Text>
             </View>
           ) : (
-            pastSheets.map((sheet) => {
-              const sheetExpenses = expensesForSheet(allExpenses, sheet);
-              const summary = computeSummary(sheet.budget, sheetExpenses);
-              const expenses = sortNewest(sheetExpenses);
-              return (
-                <View key={sheet.id} className="mb-5">
-                  <View className="mb-1.5 px-1">
-                    <Text className="text-[15px] font-bold text-ink-900">
-                      {formatDateShort(sheet.startDate)} -{" "}
-                      {formatDateShort(sheet.endDate)}
-                    </Text>
-                    <Text className="mt-0.5 text-[13px] text-ink-400">
-                      {formatCurrency(summary.budget)} budget ·{" "}
-                      {formatCurrency(summary.spent)} spent
-                    </Text>
-                    <Text
-                      className={`text-[13px] font-semibold ${
-                        summary.overBudget ? "text-rose-500" : "text-emerald-600"
-                      }`}
-                    >
-                      {formatCurrency(summary.remaining)}{" "}
-                      {summary.overBudget ? "over" : "left"}
-                    </Text>
-                  </View>
-
-                  <View className="rounded-3xl bg-white px-4 py-2">
-                    {expenses.length === 0 ? (
-                      <Text className="py-6 text-center text-[13px] text-ink-400">
-                        No expenses in this period.
+            <>
+              {groups.map(({ sheet, summary, expenses }) => {
+                const expanded = expandedIds.has(sheet.id);
+                return (
+                  <View
+                    key={sheet.id}
+                    className="mb-5 overflow-hidden rounded-3xl bg-white"
+                  >
+                    {/* Summary header */}
+                    <View className="px-4 pb-3 pt-4">
+                      <View className="flex-row items-center justify-between">
+                        <Text className="flex-1 text-[15px] font-bold text-ink-900">
+                          {formatDateShort(sheet.startDate)} -{" "}
+                          {formatDateShort(sheet.endDate)}
+                        </Text>
+                        <Pressable
+                          onPress={() => toggleExpanded(sheet.id)}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel={
+                            expanded ? "Hide expenses" : "Show expenses"
+                          }
+                          className="ml-2 shrink-0 flex-row items-center rounded-full bg-ink-100 px-3 py-1.5"
+                        >
+                          <Text className="mr-1 text-[12px] font-semibold text-ink-600">
+                            {expenses.length}
+                          </Text>
+                          <Ionicons
+                            name={expanded ? "chevron-up" : "chevron-down"}
+                            size={14}
+                            color="#64748b"
+                          />
+                        </Pressable>
+                      </View>
+                      <Text className="mt-1 text-[13px] text-ink-400">
+                        {formatCurrency(summary.budget)} budget ·{" "}
+                        {formatCurrency(summary.spent)} spent
                       </Text>
-                    ) : (
-                      expenses.map((expense) => (
-                        <TransactionItem
-                          key={expense.id}
-                          expense={expense}
-                          showDate
+                      <View className="mt-2">
+                        <ProgressBar
+                          progress={summary.ratio}
+                          barColor={
+                            summary.overBudget
+                              ? "#fb7185"
+                              : summary.ratio >= 0.75
+                                ? "#fbbf24"
+                                : "#34d399"
+                          }
+                          trackColor="#e2e8f0"
+                          height={6}
                         />
-                      ))
+                      </View>
+                      <Text
+                        className={`mt-1.5 text-[13px] font-semibold ${
+                          summary.overBudget
+                            ? "text-rose-500"
+                            : "text-emerald-600"
+                        }`}
+                      >
+                        {formatCurrency(summary.remaining)}{" "}
+                        {summary.overBudget ? "over" : "left"}
+                      </Text>
+                    </View>
+
+                    {/* Expenses (collapsed by default) */}
+                    {expanded && (
+                      <View className="border-t border-ink-100 px-4 py-1">
+                        {expenses.length === 0 ? (
+                          <Text className="py-6 text-center text-[13px] text-ink-400">
+                            No expenses in this period.
+                          </Text>
+                        ) : (
+                          expenses.map((expense) => (
+                            <TransactionItem
+                              key={expense.id}
+                              expense={expense}
+                              showDate
+                            />
+                          ))
+                        )}
+                      </View>
                     )}
                   </View>
-                </View>
-              );
-            })
+                );
+              })}
+            </>
           )}
         </ScrollView>
       </SafeAreaView>

@@ -3,7 +3,6 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
 import {
-  addDaysISO,
   todayISO,
   uid,
 } from "@/lib/format";
@@ -32,14 +31,19 @@ export const useBudgetStore = create<BudgetState>()(
       createBudgetSheet: (data) =>
         set((state) => {
           const active = currentSheet(state.sheets);
-          const closeBefore = addDaysISO(data.startDate, -1);
+          // The active sheet stays active until a new one is created, so it
+          // closes on the new sheet's start date (clamped to never end before
+          // its own start). Example: created Aug 8, new budget on Aug 9
+          // -> the previous sheet spans "Aug 8 - Aug 9".
           const sheets = active
             ? state.sheets.map((s) =>
                 s.id === active.id
                   ? {
                       ...s,
                       endDate:
-                        closeBefore < s.startDate ? s.startDate : closeBefore,
+                        data.startDate < s.startDate
+                          ? s.startDate
+                          : data.startDate,
                     }
                   : s
               )
@@ -102,11 +106,12 @@ export const useBudgetStore = create<BudgetState>()(
   )
 );
 
+/** Newest-first ordering: by expense date, then by creation time as a tiebreaker. */
 export function sortNewest(expenses: Expense[]): Expense[] {
   return [...expenses].sort((a, b) => {
-    const byTime = (b.createdAt || 0) - (a.createdAt || 0);
-    if (byTime !== 0) return byTime;
-    return (b.date || "").localeCompare(a.date || "");
+    const byDate = (b.date || "").localeCompare(a.date || "");
+    if (byDate !== 0) return byDate;
+    return (b.createdAt || 0) - (a.createdAt || 0);
   });
 }
 

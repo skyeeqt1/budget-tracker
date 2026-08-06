@@ -1,8 +1,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { ComponentProps } from "react";
 import { View } from "react-native";
 
 import { getCategory } from "@/constants/categories";
 import { CategoryId } from "@/types";
+
+type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
 interface Props {
   category: CategoryId;
@@ -25,7 +28,11 @@ export default function CategoryIcon({
         backgroundColor: meta.bgColor,
       }}
     >
-      <Ionicons name={meta.icon as any} size={iconSize} color={meta.color} />
+      <Ionicons
+        name={meta.icon as IoniconName}
+        size={iconSize}
+        color={meta.color}
+      />
     </View>
   );
 }
