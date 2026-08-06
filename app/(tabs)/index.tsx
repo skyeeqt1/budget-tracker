@@ -39,7 +39,7 @@ export default function DashboardScreen() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   const recent = useMemo(
-    () => sortNewest(periodExpenses).slice(0, 5),
+    () => sortNewest(periodExpenses),
     [periodExpenses]
   );
 
@@ -62,7 +62,7 @@ export default function DashboardScreen() {
   };
 
   /** Adding an expense without an active budget would orphan it, so guide to the budget flow instead. */
-  const handleFabPress = () => {
+  const handleAddPress = () => {
     if (!sheet) {
       openBudgetModal("create");
       return;
@@ -95,17 +95,10 @@ export default function DashboardScreen() {
     ]).start();
   }, [hasSheet, heroOpacity, heroTranslateY]);
 
-  // FAB press feedback.
-  const fabScale = useRef(new Animated.Value(1)).current;
-
   return (
     <View className="flex-1 bg-ink-50">
       <SafeAreaView edges={["top"]} className="flex-1">
-        <ScrollView
-          className="flex-1"
-          contentContainerClassName="px-5 pb-28 pt-3"
-          showsVerticalScrollIndicator={false}
-        >
+        <View className="flex-1 px-5 pb-4 pt-3">
           {/* Header */}
           <View className="mb-5 flex-row items-center justify-between">
             <View className="mr-3 flex-1">
@@ -271,75 +264,56 @@ export default function DashboardScreen() {
             </View>
           )}
 
-          {/* Recent transactions */}
-          <Text className="mb-4 text-[18px] font-bold text-ink-900">
-            Recent Transactions
-          </Text>
-
-          <View className="rounded-3xl bg-white px-4 py-2">
-            {recent.length === 0 ? (
-              <View className="items-center py-10">
-                <View className="mb-3 h-14 w-14 items-center justify-center rounded-full bg-ink-100">
-                  <Ionicons name="receipt-outline" size={26} color="#94a3b8" />
-                </View>
-                <Text className="text-[15px] font-semibold text-ink-700">
-                  No expenses yet
-                </Text>
-                <Text className="mt-1 text-center text-[13px] text-ink-400">
-                  Tap the + button below to record{"\n"}your first transaction.
-                </Text>
-              </View>
-            ) : (
-              recent.map((expense) => (
-                <TransactionItem
-                  key={expense.id}
-                  expense={expense}
-                  onDelete={handleDelete}
-                  showDate
-                />
-              ))
-            )}
+          {/* Transactions */}
+          <View className="mb-4 flex-row items-center justify-between">
+            <Text className="text-[18px] font-bold text-ink-900">
+              Transactions
+            </Text>
+            <Pressable
+              onPress={handleAddPress}
+              accessibilityRole="button"
+              accessibilityLabel="Add expense"
+              style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+              className="flex-row items-center rounded-full bg-indigo-600 px-4 py-2"
+            >
+              <Ionicons name="add" size={16} color="#ffffff" />
+              <Text className="ml-1 text-[13px] font-bold text-white">
+                Add
+              </Text>
+            </Pressable>
           </View>
-        </ScrollView>
 
-        {/* FAB */}
-        <Pressable
-          onPress={handleFabPress}
-          onPressIn={() =>
-            Animated.spring(fabScale, {
-              toValue: 0.86,
-              useNativeDriver: true,
-            }).start()
-          }
-          onPressOut={() =>
-            Animated.spring(fabScale, {
-              toValue: 1,
-              friction: 4,
-              useNativeDriver: true,
-            }).start()
-          }
-          accessibilityRole="button"
-          accessibilityLabel={sheet ? "Add expense" : "Set up budget"}
-          className="absolute bottom-8 right-5"
-        >
-          <Animated.View
-            className="h-16 w-16 items-center justify-center rounded-full bg-indigo-600"
-            style={{
-              transform: [{ scale: fabScale }],
-              shadowColor: "#4f46e5",
-              shadowOpacity: 0.4,
-              shadowRadius: 12,
-              shadowOffset: { width: 0, height: 6 },
-              elevation: 8,
-            }}
-          >
-            <Ionicons
-              name={sheet ? "add" : "wallet-outline"}
-              size={32}
-              color="#ffffff"
-            />
-          </Animated.View>
-        </Pressable>
+          <View className="flex-1 overflow-hidden rounded-3xl bg-white">
+            <ScrollView
+              className="flex-1"
+              contentContainerClassName="px-4 py-2"
+              showsVerticalScrollIndicator={false}
+            >
+              {recent.length === 0 ? (
+                <View className="items-center py-10">
+                  <View className="mb-3 h-14 w-14 items-center justify-center rounded-full bg-ink-100">
+                    <Ionicons name="receipt-outline" size={26} color="#94a3b8" />
+                  </View>
+                  <Text className="text-[15px] font-semibold text-ink-700">
+                    No expenses yet
+                  </Text>
+                  <Text className="mt-1 text-center text-[13px] text-ink-400">
+                    Tap the + button below to record{"\n"}your first transaction.
+                  </Text>
+                </View>
+              ) : (
+                recent.map((expense) => (
+                  <TransactionItem
+                    key={expense.id}
+                    expense={expense}
+                    onDelete={handleDelete}
+                    showDate
+                  />
+                ))
+              )}
+            </ScrollView>
+          </View>
+        </View>
       </SafeAreaView>
 
       <AddExpenseModal
