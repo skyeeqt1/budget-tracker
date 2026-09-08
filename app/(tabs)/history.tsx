@@ -1,11 +1,15 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import * as Haptics from "expo-haptics";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import ConfirmModal from "@/components/ConfirmModal";
 import ProgressBar from "@/components/ProgressBar";
+import SuccessToast from "@/components/SuccessToast";
 import TransactionItem from "@/components/TransactionItem";
 import { formatCurrency, formatDateShort } from "@/lib/format";
+import { generateBudgetPdf } from "@/lib/generatePdf";
 import {
   computeSummary,
   currentSheet,
@@ -13,6 +17,7 @@ import {
   sortNewest,
   useBudgetStore,
 } from "@/store/useBudgetStore";
+import { BudgetSheet, BudgetSummary, Expense } from "@/types";
 
 export default function HistoryScreen() {
   const sheets = useBudgetStore((s) => s.sheets);
@@ -20,6 +25,15 @@ export default function HistoryScreen() {
 
   // Sheets whose expense list is expanded. Everything starts collapsed.
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  // PDF export state
+  const [exportTarget, setExportTarget] = useState<{
+    sheet: BudgetSheet;
+    summary: BudgetSummary;
+    expenses: Expense[];
+  } | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [toastFile, setToastFile] = useState<string | null>(null);
 
   const toggleExpanded = (id: string) => {
     setExpandedIds((prev) => {
@@ -55,6 +69,30 @@ export default function HistoryScreen() {
 
   const hasAnySheet = sheets.length > 0;
 
+  const handleExportPress = (
+    sheet: BudgetSheet,
+    summary: BudgetSummary,
+    expenses: Expense[]
+  ) => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setExportTarget({ sheet, summary, expenses });
+  };
+
+  const handleExportConfirm = async () => {
+    if (!exportTarget) return;
+    setExporting(true);
+    try {
+      const fileName = await generateBudgetPdf(exportTarget);
+      if (fileName) setToastFile(fileName);
+    } catch (err) {
+      console.error("PDF export failed:", err);
+      Alert.alert("Export Failed", "Could not generate the PDF. Please try again.");
+    } finally {
+      setExporting(false);
+      setExportTarget(null);
+    }
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: "#F8F7FF" }}>
       <SafeAreaView edges={["top"]} className="flex-1">
@@ -69,6 +107,11 @@ export default function HistoryScreen() {
                   pastSheets.length === 1 ? "" : "s"
                 }`}
           </Text>
+          {pastSheets.length > 0 && (
+            <Text className="mt-1 text-[12px] text-ink-400">
+              Tap the document icon to export a record as PDF
+            </Text>
+          )}
         </View>
 
         <ScrollView
@@ -106,24 +149,36 @@ export default function HistoryScreen() {
                           {formatDateShort(sheet.startDate)} -{" "}
                           {formatDateShort(sheet.endDate)}
                         </Text>
-                        <Pressable
-                          onPress={() => toggleExpanded(sheet.id)}
-                          hitSlop={8}
-                          accessibilityRole="button"
-                          accessibilityLabel={
-                            expanded ? "Hide expenses" : "Show expenses"
-                          }
-                          className="ml-2 shrink-0 flex-row items-center rounded-full bg-ink-100 px-3 py-1.5"
-                        >
-                          <Text className="mr-1 text-[12px] font-semibold text-ink-600">
-                            {expenses.length}
-                          </Text>
-                          <Ionicons
-                            name={expanded ? "chevron-up" : "chevron-down"}
-                            size={14}
-                            color="#64748b"
-                          />
-                        </Pressable>
+                        <View className="ml-2 shrink-0 flex-row items-center">
+                          <Pressable
+                            onPress={() => handleExportPress(sheet, summary, expenses)}
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Export as PDF"
+                            style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+                            className="mr-2 h-8 w-8 items-center justify-center rounded-full bg-indigo-100"
+                          >
+                            <Ionicons name="document-text-outline" size={15} color="#9381FF" />
+                          </Pressable>
+                          <Pressable
+                            onPress={() => toggleExpanded(sheet.id)}
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel={
+                              expanded ? "Hide expenses" : "Show expenses"
+                            }
+                            className="flex-row items-center rounded-full bg-ink-100 px-3 py-1.5"
+                          >
+                            <Text className="mr-1 text-[12px] font-semibold text-ink-600">
+                              {expenses.length}
+                            </Text>
+                            <Ionicons
+                              name={expanded ? "chevron-up" : "chevron-down"}
+                              size={14}
+                              color="#64748b"
+                            />
+                          </Pressable>
+                        </View>
                       </View>
                       <Text className="mt-1 text-[13px] text-ink-400">
                         {formatCurrency(summary.budget)} budget ·{" "}
@@ -180,6 +235,22 @@ export default function HistoryScreen() {
           )}
         </ScrollView>
       </SafeAreaView>
+
+      <ConfirmModal
+        visible={exportTarget !== null}
+        title="Export as PDF"
+        message="Save this budget record as a PDF file to share or print."
+        confirmLabel={exporting ? "Exporting..." : "Export"}
+        confirmDisabled={exporting}
+        onCancel={() => setExportTarget(null)}
+        onConfirm={handleExportConfirm}
+      />
+
+      <SuccessToast
+        visible={toastFile !== null}
+        message={toastFile ? `Saved as ${toastFile}` : ""}
+        onHidden={() => setToastFile(null)}
+      />
     </View>
   );
 }

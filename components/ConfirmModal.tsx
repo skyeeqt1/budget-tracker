@@ -14,6 +14,7 @@ interface Props {
   onConfirm: () => void;
   onCancel: () => void;
   destructive?: boolean;
+  confirmDisabled?: boolean;
 }
 
 export default function ConfirmModal({
@@ -25,6 +26,7 @@ export default function ConfirmModal({
   onConfirm,
   onCancel,
   destructive = false,
+  confirmDisabled = false,
 }: Props) {
   const iconBg = destructive ? "bg-rose-100" : "bg-indigo-100";
   const confirmBg = destructive ? "bg-rose-500" : "bg-indigo-600";
@@ -92,7 +94,9 @@ export default function ConfirmModal({
             </Pressable>
             <Pressable
               onPress={handleConfirm}
+              disabled={confirmDisabled}
               accessibilityRole="button"
+              style={{ opacity: confirmDisabled ? 0.5 : 1 }}
               className={`ml-2 flex-1 items-center rounded-2xl py-3.5 ${confirmBg}`}
             >
               <Text className="text-[15px] font-bold text-white">
