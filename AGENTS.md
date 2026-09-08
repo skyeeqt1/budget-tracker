@@ -1,15 +1,18 @@
 # Budget Tracker — Project Rules
 
 ## Tech Stack
-- Expo SDK 54, React Native 0.81, React 19, TypeScript, expo-router, NativeWind (Tailwind), Zustand + AsyncStorage persistence.
+- Expo SDK 57 (expo 57.0.20), React Native 0.86.3, React 19.2.3, TypeScript 6.0, expo-router 57, NativeWind 4 (Tailwind 3), Zustand + AsyncStorage persistence.
 
 ## Versioned Docs
-- This project targets Expo SDK 54. Read the exact versioned docs at https://docs.expo.dev/versions/v54.0.0/ before writing any code.
+- This project targets Expo SDK 57. Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code.
+- SDK 57 requires Node.js 22.13+ and iOS 16.4+; native iOS builds require Xcode 26.4+ (macOS or EAS Build).
 
 ## Commands (run after code changes)
 - `npx tsc --noEmit` — type check
 - `npm run lint` — lint
 - `npx expo export --platform android` — verify the Android bundle builds
+- `npx expo export --platform ios` — verify the iOS bundle builds
+- `npx expo-doctor` — check SDK configuration and dependency compatibility
 
 ## Architecture & Data Model
 - Data lives in `store/useBudgetStore.ts` (Zustand + `persist`, AsyncStorage, storage name `budget-tracker-storage`).
@@ -17,7 +20,7 @@
 - Entities:
   - `BudgetSheet` — single-day budget: `startDate === endDate` at creation.
   - `Expense` — bound to a sheet via required `sheetId`.
-- Drop target SDK e.g., `react-native-worklets` must match reanimated version (current `react-native-worklets@0.5.1`).
+- Keep animation dependencies aligned with SDK 57: `react-native-reanimated@4.5.1` and `react-native-worklets@0.10.1`. Use `npx expo install --check` to verify alignment.
 
 ## Business Rules
 - User is a single person in the Philippines → currency is PHP (₱), no greeting/avatar.
@@ -45,6 +48,7 @@
 - Logo: `assets/images/tracker-logo.png` (1254×1254). Native splash uses `imageWidth: 200`; keep the in-app `AppSplash` logo size identical (200px) to avoid a size jump.
 
 ## Builds / Native
+- Preserve the managed/CNG workflow: generated `android` and `ios` folders are ignored and must not be committed. SDK 57 requires the New Architecture and Android edge-to-edge; do not restore removed `newArchEnabled` or `edgeToEdgeEnabled` flags.
 - `app.json` requires `softwareKeyboardLayoutMode: "resize"` and the splash/icon/adaptive-icon images.
 - EAS lockfile/build install is sensitive: `package-lock.json` must be committed; `@emnapi/*` deps are pinned via `overrides` + devDependencies — do not remove.
 - A native APK only reproduces what was baked in at build time; JS-only changes require a rebuild/reinstall. Live Expo Go (QR) shows latest code.
