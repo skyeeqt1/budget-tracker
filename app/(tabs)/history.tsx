@@ -1,11 +1,14 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
+import * as Haptics from "expo-haptics";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import ConfirmModal from "@/components/ConfirmModal";
 import ProgressBar from "@/components/ProgressBar";
 import TransactionItem from "@/components/TransactionItem";
 import { formatCurrency, formatDateShort } from "@/lib/format";
+import { generateBudgetPdf } from "@/lib/generatePdf";
 import {
   computeSummary,
   currentSheet,
@@ -13,6 +16,7 @@ import {
   sortNewest,
   useBudgetStore,
 } from "@/store/useBudgetStore";
+import { BudgetSheet, BudgetSummary, Expense } from "@/types";
 
 export default function HistoryScreen() {
   const sheets = useBudgetStore((s) => s.sheets);
@@ -20,6 +24,14 @@ export default function HistoryScreen() {
 
   // Sheets whose expense list is expanded. Everything starts collapsed.
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  // PDF export state
+  const [exportTarget, setExportTarget] = useState<{
+    sheet: BudgetSheet;
+    summary: BudgetSummary;
+    expenses: Expense[];
+  } | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   const toggleExpanded = (id: string) => {
     setExpandedIds((prev) => {
@@ -55,6 +67,28 @@ export default function HistoryScreen() {
 
   const hasAnySheet = sheets.length > 0;
 
+  const handleLongPress = (
+    sheet: BudgetSheet,
+    summary: BudgetSummary,
+    expenses: Expense[]
+  ) => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    setExportTarget({ sheet, summary, expenses });
+  };
+
+  const handleExportConfirm = async () => {
+    if (!exportTarget) return;
+    setExporting(true);
+    try {
+      await generateBudgetPdf(exportTarget);
+    } catch {
+      Alert.alert("Export Failed", "Could not generate the PDF. Please try again.");
+    } finally {
+      setExporting(false);
+      setExportTarget(null);
+    }
+  };
+
   return (
     <View style={{ flex: 1, backgroundColor: "#F8F7FF" }}>
       <SafeAreaView edges={["top"]} className="flex-1">
@@ -69,6 +103,11 @@ export default function HistoryScreen() {
                   pastSheets.length === 1 ? "" : "s"
                 }`}
           </Text>
+          {pastSheets.length > 0 && (
+            <Text className="mt-1 text-[12px] text-ink-400">
+              Long press a record to export as PDF
+            </Text>
+          )}
         </View>
 
         <ScrollView
@@ -95,8 +134,12 @@ export default function HistoryScreen() {
               {groups.map(({ sheet, summary, expenses }) => {
                 const expanded = expandedIds.has(sheet.id);
                 return (
-                  <View
+                  <Pressable
                     key={sheet.id}
+                    onLongPress={() => handleLongPress(sheet, summary, expenses)}
+                    delayLongPress={500}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Budget record ${formatDateShort(sheet.startDate)} to ${formatDateShort(sheet.endDate)}. Long press to export as PDF.`}
                     className="mb-5 overflow-hidden rounded-3xl bg-white"
                   >
                     {/* Summary header */}
@@ -173,13 +216,23 @@ export default function HistoryScreen() {
                         )}
                       </View>
                     )}
-                  </View>
+                  </Pressable>
                 );
               })}
             </>
           )}
         </ScrollView>
       </SafeAreaView>
+
+      <ConfirmModal
+        visible={exportTarget !== null}
+        title="Export as PDF"
+        message="Save this budget record as a PDF file to share or print."
+        confirmLabel={exporting ? "Exporting..." : "Export"}
+        confirmDisabled={exporting}
+        onCancel={() => setExportTarget(null)}
+        onConfirm={handleExportConfirm}
+      />
     </View>
   );
 }
