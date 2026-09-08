@@ -5,7 +5,6 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
 import { useState } from "react";
 import {
-  Animated,
   Modal,
   Platform,
   Pressable,
@@ -24,7 +23,6 @@ import {
   toISO,
   todayISO,
 } from "@/lib/format";
-import { useKeyboardLift } from "@/lib/useKeyboardLift";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { CategoryId, NewExpense } from "@/types";
 
@@ -35,8 +33,6 @@ interface Props {
 
 export default function AddExpenseModal({ visible, onClose }: Props) {
   const addExpense = useBudgetStore((s) => s.addExpense);
-
-  const { translateY, handleSheetLayout, resetLift } = useKeyboardLift();
 
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
@@ -53,7 +49,6 @@ export default function AddExpenseModal({ visible, onClose }: Props) {
   const canSubmit = titleValid && amountValid;
 
   const reset = () => {
-    resetLift();
     setTitle("");
     setAmount("");
     setCategory(DEFAULT_CATEGORY);
@@ -111,10 +106,7 @@ export default function AddExpenseModal({ visible, onClose }: Props) {
       <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "transparent" }}>
         <Pressable className="flex-1" onPress={handleClose} />
 
-        <Animated.View
-          onLayout={handleSheetLayout}
-          style={{ transform: [{ translateY }] }}
-        >
+        <View>
           <SafeAreaView edges={["bottom"]} className="bg-white rounded-t-3xl">
             <View className="px-5 pb-5">
               {/* Handle */}
@@ -287,7 +279,7 @@ export default function AddExpenseModal({ visible, onClose }: Props) {
               </Pressable>
             </View>
           </SafeAreaView>
-        </Animated.View>
+        </View>
       </View>
     </Modal>
   );

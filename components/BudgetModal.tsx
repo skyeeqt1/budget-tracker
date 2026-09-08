@@ -1,11 +1,10 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
 import { useState } from "react";
-import { Animated, Modal, Pressable, Text, TextInput, View } from "react-native";
+import { Modal, Pressable, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { sanitizeAmountInput, todayISO } from "@/lib/format";
-import { useKeyboardLift } from "@/lib/useKeyboardLift";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { BudgetSheet } from "@/types";
 
@@ -25,8 +24,6 @@ export default function BudgetModal({
   const createBudgetSheet = useBudgetStore((s) => s.createBudgetSheet);
   const updateBudgetSheet = useBudgetStore((s) => s.updateBudgetSheet);
 
-  const { translateY, handleSheetLayout, resetLift } = useKeyboardLift();
-
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [amountFocused, setAmountFocused] = useState(false);
@@ -40,7 +37,6 @@ export default function BudgetModal({
   };
 
   const handleClose = () => {
-    resetLift();
     setError(null);
     onClose();
   };
@@ -73,10 +69,7 @@ export default function BudgetModal({
       <View className="flex-1 justify-end" style={{ backgroundColor: "transparent" }}>
         <Pressable className="flex-1" onPress={handleClose} />
 
-        <Animated.View
-          onLayout={handleSheetLayout}
-          style={{ transform: [{ translateY }] }}
-        >
+        <View>
           <SafeAreaView edges={["bottom"]} className="bg-white rounded-t-3xl">
             <View className="px-5 pb-5">
               <View className="mb-4 items-center">
@@ -165,7 +158,7 @@ export default function BudgetModal({
               </Pressable>
             </View>
           </SafeAreaView>
-        </Animated.View>
+        </View>
       </View>
     </Modal>
   );
