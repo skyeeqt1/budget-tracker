@@ -17,7 +17,9 @@ import AddExpenseModal from "@/components/AddExpenseModal";
 import AnimatedNumber from "@/components/AnimatedNumber";
 import BudgetModal from "@/components/BudgetModal";
 import ConfirmModal from "@/components/ConfirmModal";
+import DataMenu from "@/components/DataMenu";
 import ProgressBar from "@/components/ProgressBar";
+import SuccessToast from "@/components/SuccessToast";
 import TransactionItem from "@/components/TransactionItem";
 import {
   formatCurrency,
@@ -43,6 +45,9 @@ export default function DashboardScreen() {
   const [budgetModalVisible, setBudgetModalVisible] = useState(false);
   const [budgetMode, setBudgetMode] = useState<"create" | "edit">("create");
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [toastSuccess, setToastSuccess] = useState(true);
+  const [dataMenuVisible, setDataMenuVisible] = useState(false);
 
   const recent = useMemo(
     () => sortNewest(periodExpenses),
@@ -144,6 +149,16 @@ export default function DashboardScreen() {
               >
                 New Budget
               </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setDataMenuVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Data menu"
+              hitSlop={8}
+              style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+              className="ml-2 h-11 w-11 items-center justify-center rounded-2xl bg-ink-100"
+            >
+              <Ionicons name="ellipsis-horizontal" size={18} color="#64748b" />
             </Pressable>
           </View>
 
@@ -343,6 +358,20 @@ export default function DashboardScreen() {
           if (deleteTarget) deleteExpense(deleteTarget);
           setDeleteTarget(null);
         }}
+      />
+      <DataMenu
+        visible={dataMenuVisible}
+        onClose={() => setDataMenuVisible(false)}
+        onResult={(msg, success) => {
+          setToastSuccess(success);
+          setToastMsg(msg);
+        }}
+      />
+      <SuccessToast
+        visible={toastMsg !== null}
+        message={toastMsg ?? ""}
+        success={toastSuccess}
+        onHidden={() => setToastMsg(null)}
       />
     </View>
   );

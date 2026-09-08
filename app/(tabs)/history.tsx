@@ -248,6 +248,7 @@ export default function HistoryScreen() {
 
       <SuccessToast
         visible={toastFile !== null}
+        title="Export Successful"
         message={toastFile ? `Saved as ${toastFile}` : ""}
         onHidden={() => setToastFile(null)}
       />
