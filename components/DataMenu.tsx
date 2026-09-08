@@ -1,6 +1,6 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Animated, Modal, Pressable, Text, View } from "react-native";
 
 import { exportData, importData } from "@/lib/backup";
@@ -27,8 +27,16 @@ export default function DataMenu({ visible, onClose, onResult }: Props) {
   }, [visible, opacity]);
 
   const [loading, setLoading] = useState(false);
+  // Lock immediately, before React renders the disabled buttons.
+  const operationInFlight = useRef(false);
+
+  const handleClose = () => {
+    if (!operationInFlight.current) onClose();
+  };
 
   const handleBackup = async () => {
+    if (operationInFlight.current) return;
+    operationInFlight.current = true;
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setLoading(true);
     try {
@@ -36,12 +44,16 @@ export default function DataMenu({ visible, onClose, onResult }: Props) {
       onClose();
       if (ok) onResult("Backup saved successfully", true);
     } catch {
-      setLoading(false);
       onResult("Could not export data", false);
+    } finally {
+      operationInFlight.current = false;
+      setLoading(false);
     }
   };
 
   const handleRestore = async () => {
+    if (operationInFlight.current) return;
+    operationInFlight.current = true;
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setLoading(true);
     try {
@@ -49,18 +61,20 @@ export default function DataMenu({ visible, onClose, onResult }: Props) {
       onClose();
       if (ok) onResult("Data restored — restart the app to apply", true);
     } catch {
-      setLoading(false);
       onResult("Not a valid backup file", false);
+    } finally {
+      operationInFlight.current = false;
+      setLoading(false);
     }
   };
 
   return (
-    <Modal visible={visible} transparent animationType="none" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
       <Animated.View
         style={{ opacity }}
         className="flex-1 items-center justify-end"
       >
-        <Pressable className="absolute inset-0" onPress={onClose} />
+        <Pressable className="absolute inset-0" onPress={handleClose} disabled={loading} />
         <View className="w-full rounded-t-3xl bg-white px-5 pb-8 pt-5">
           <View className="mb-5 items-center">
             <View className="h-1.5 w-12 rounded-full bg-ink-200" />
