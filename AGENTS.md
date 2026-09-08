@@ -16,7 +16,7 @@
 
 ## Architecture & Data Model
 - Data lives in `store/useBudgetStore.ts` (Zustand + `persist`, AsyncStorage, storage name `budget-tracker-storage`).
-- Persist uses versions with a reset migration. Bumping the version wipes user's local data — do it intentionally.
+- Persistence is currently version 3. Its migration resets sheets and expenses when a stored version mismatch triggers it, including on restored backups. Bumping the version can wipe local data; do it intentionally. App release versions are separate from persistence versions.
 - Entities:
   - `BudgetSheet` — single-day budget: `startDate === endDate` at creation.
   - `Expense` — bound to a sheet via required `sheetId`.
@@ -37,9 +37,23 @@
 - Empty states for Home and History screens.
 
 ## Modals & Keyboard
-- `AddExpenseModal.tsx`, `BudgetModal.tsx` (create + edit), and `AppSplash.tsx` are bottom sheets / screens.
+- `AddExpenseModal.tsx` and `BudgetModal.tsx` (create + edit) are bottom sheets; `AppSplash.tsx` is the in-app splash screen.
 - Bottom-sheet modals must NOT be manually scrollable, must keep the keyboard from overlapping, and must NOT push past the top of the screen.
-- Keyboard handling: use the animated `translateY` lift pattern (see `AddExpenseModal.tsx`): use `Dimensions.get("window")`, an `onLayout` to track sheet height, and detect whether the OS already resized the window (`windowHeight + keyboardHeight <= fullWindowHeight`). Only lift when the OS did not resize. Do not rely on `KeyboardAvoidingView` on Android.
+- Both form sheets use `hooks/useKeyboardSheet.ts`: wire `onContainerLayout` to the modal container, `onSheetLayout` to the sheet, and apply animated `translateY`. Measured modal height takes precedence over `Dimensions` because Android Modal has a separate Dialog window. The hook accounts for OS resize, lifts only for remaining keyboard overlap, and clamps movement against the top safe-area inset plus 8px. Do not replace it with `KeyboardAvoidingView` on Android.
+- Neither form auto-focuses inputs. Keep the keyboard closed until the user taps an input; dismiss it on close and before opening the expense date picker.
+- On each budget modal open, create mode starts with an empty amount (`0.00` is only a placeholder); edit mode prefills the selected sheet's budget. Never carry the previous budget amount into create mode.
+- The keyboard hook prioritizes keeping the top reachable when the sheet exceeds available height; this is not a guarantee that every control fits on every screen/keyboard combination. Verify small-screen and large-text behavior on devices without adding manual scrolling.
+
+## Backup & Restore
+- `lib/backup.ts` exports the raw `budget-tracker-storage` JSON. Android uses `StorageAccessFramework` (SAF) from `expo-file-system/legacy` to request a folder and write UTF-8 JSON with base name `budget-tracker-backup`; iOS writes `budget-tracker-backup.json` to cache and opens the share sheet. Share-sheet completion does not prove the user saved a file.
+- Restore uses `expo-document-picker` with `application/json` and `copyToCacheDirectory: true`, then reads the picked URI with `fetch`. File URI/provider support can fail; do not describe this as guaranteed on all runtimes. `DataMenu.tsx` currently reports all restore errors as an invalid backup, including read failures.
+- Validation only parses JSON and checks truthy `state.sheets` and `state.expenses`; it does not validate entity schemas or version compatibility. Restore overwrites the storage key, does not merge or rehydrate the running Zustand store, and requires an app restart. Restart immediately before making further changes that could overwrite the restored data.
+- Expo Go cannot access a standalone APK's private storage. Transfer requires a backup exported from the app/container holding the data; if an old APK cannot export, opening newer code in Expo Go does not recover it.
+
+## PDF Export
+- History exports individual past sheets using `lib/generatePdf.ts` and `pdf-lib` with standard Helvetica fonts, not a native print pipeline. Currency uses `PHP ` instead of the peso symbol for font compatibility; arbitrary Unicode expense titles are not guaranteed to render.
+- Android requests a SAF folder and writes a base64 PDF. The requested filename is `MM-DD-YY.pdf` from the sheet's start date (not the export date); the file provider controls the final name and duplicate handling. History shows a success toast with the returned requested filename only after the write succeeds. Permission denial/cancellation returns no filename and shows no success toast.
+- iOS writes `budget-record.pdf` to cache and opens the share sheet (including Save to Files). It returns no filename and does not show the Android save-success toast; share completion is not confirmation of a saved file.
 
 ## Dates
 - Android's `toLocaleDateString` truncates month labels — use an explicit short-month array (`MONTHS_SHORT` in `lib/format.ts`).
@@ -52,3 +66,5 @@
 - `app.json` requires `softwareKeyboardLayoutMode: "resize"` and the splash/icon/adaptive-icon images.
 - EAS lockfile/build install is sensitive: `package-lock.json` must be committed; `@emnapi/*` deps are pinned via `overrides` + devDependencies — do not remove.
 - A native APK only reproduces what was baked in at build time; JS-only changes require a rebuild/reinstall. Live Expo Go (QR) shows latest code.
+- The display/release version is `expo.version` in `app.json`, currently `1.1.0` (not `package.json`, which remains `1.0.0`). Set display versions explicitly. `eas.json` uses remote version management with `autoIncrement: true` for preview and production: this increments Android `versionCode` / iOS `buildNumber`, not the display version; development has no auto-increment configured.
+- An Android in-place upgrade requires the same package (`com.budgettracker`) and signing certificate, plus an appropriate higher `versionCode`. Preserve EAS signing credentials. Do not uninstall or clear storage to upgrade when retaining data matters. Matching package/signing permits an upgrade but does not prevent data loss from reset migrations; keep a usable backup where possible.
