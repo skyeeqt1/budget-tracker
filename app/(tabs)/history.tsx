@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import ConfirmModal from "@/components/ConfirmModal";
 import ProgressBar from "@/components/ProgressBar";
+import SuccessToast from "@/components/SuccessToast";
 import TransactionItem from "@/components/TransactionItem";
 import { formatCurrency, formatDateShort } from "@/lib/format";
 import { generateBudgetPdf } from "@/lib/generatePdf";
@@ -32,6 +33,7 @@ export default function HistoryScreen() {
     expenses: Expense[];
   } | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [toastFile, setToastFile] = useState<string | null>(null);
 
   const toggleExpanded = (id: string) => {
     setExpandedIds((prev) => {
@@ -80,8 +82,10 @@ export default function HistoryScreen() {
     if (!exportTarget) return;
     setExporting(true);
     try {
-      await generateBudgetPdf(exportTarget);
-    } catch {
+      const fileName = await generateBudgetPdf(exportTarget);
+      if (fileName) setToastFile(fileName);
+    } catch (err) {
+      console.error("PDF export failed:", err);
       Alert.alert("Export Failed", "Could not generate the PDF. Please try again.");
     } finally {
       setExporting(false);
@@ -240,6 +244,12 @@ export default function HistoryScreen() {
         confirmDisabled={exporting}
         onCancel={() => setExportTarget(null)}
         onConfirm={handleExportConfirm}
+      />
+
+      <SuccessToast
+        visible={toastFile !== null}
+        message={toastFile ? `Saved as ${toastFile}` : ""}
+        onHidden={() => setToastFile(null)}
       />
     </View>
   );
