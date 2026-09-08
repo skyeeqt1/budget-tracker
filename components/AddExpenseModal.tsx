@@ -5,6 +5,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
 import { useState } from "react";
 import {
+  Animated,
+  Keyboard,
   Modal,
   Platform,
   Pressable,
@@ -16,6 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import CategoryIcon from "@/components/CategoryIcon";
 import { CATEGORIES, DEFAULT_CATEGORY, getCategory } from "@/constants/categories";
+import { useKeyboardSheet } from "@/hooks/useKeyboardSheet";
 import {
   formatDateLong,
   parseISO,
@@ -32,6 +35,8 @@ interface Props {
 }
 
 export default function AddExpenseModal({ visible, onClose }: Props) {
+  const { translateY, onContainerLayout, onSheetLayout } =
+    useKeyboardSheet(visible);
   const addExpense = useBudgetStore((s) => s.addExpense);
 
   const [title, setTitle] = useState("");
@@ -57,6 +62,8 @@ export default function AddExpenseModal({ visible, onClose }: Props) {
   };
 
   const handleClose = () => {
+    Keyboard.dismiss();
+    setAmountFocused(false);
     reset();
     onClose();
   };
@@ -103,10 +110,10 @@ export default function AddExpenseModal({ visible, onClose }: Props) {
       onShow={() => setDate(todayISO())}
       onRequestClose={handleClose}
     >
-      <View style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "transparent" }}>
-        <Pressable className="flex-1" onPress={handleClose} />
+      <View onLayout={onContainerLayout} style={{ flex: 1, justifyContent: "flex-end", backgroundColor: "transparent" }}>
+        <Pressable style={{ position: "absolute", inset: 0 }} onPress={handleClose} />
 
-        <View>
+        <Animated.View onLayout={onSheetLayout} style={{ transform: [{ translateY }] }}>
           <SafeAreaView edges={["bottom"]} className="bg-white rounded-t-3xl">
             <View className="px-5 pb-5">
               {/* Handle */}
@@ -173,7 +180,6 @@ export default function AddExpenseModal({ visible, onClose }: Props) {
                   placeholder="0.00"
                   placeholderTextColor="#94a3b8"
                   keyboardType="decimal-pad"
-                  autoFocus
                   className="ml-2 flex-1 py-3.5 text-[20px] font-semibold text-ink-900"
                 />
               </View>
@@ -215,7 +221,10 @@ export default function AddExpenseModal({ visible, onClose }: Props) {
 
               {/* Date */}
               <Pressable
-                onPress={() => setShowDatePicker(true)}
+                onPress={() => {
+                  Keyboard.dismiss();
+                  setShowDatePicker(true);
+                }}
                 accessibilityRole="button"
                 accessibilityLabel="Choose expense date"
                 className="mb-4 flex-row items-center justify-between rounded-2xl bg-ink-50 px-4 py-3"
@@ -279,7 +288,7 @@ export default function AddExpenseModal({ visible, onClose }: Props) {
               </Pressable>
             </View>
           </SafeAreaView>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
