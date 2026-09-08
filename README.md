@@ -2,6 +2,16 @@
 
 An offline-first personal budget tracker built with Expo SDK 57 (Expo 57.0.20), React Native 0.86.3, React 19.2.3, Expo Router 57, NativeWind 4, and Zustand.
 
+## Version 1.1.0
+
+The app's display/release version is `1.1.0`, configured by `expo.version` in `app.json`. The npm package version in `package.json` remains `1.0.0` and is not the app's display version.
+
+- Budgets and expenses use Philippine pesos. Categories are Internet, Electricity, Water Bill, Allowance, Grocery, and Other.
+- New Budget opens with an empty amount; `0.00` is a placeholder, not a prefilled value. Edit Budget prefills the selected budget's amount. Neither budget nor expense forms auto-focus inputs; tap an input to open the keyboard.
+- A new budget starts and ends today, with no date picker. It closes the previous budget on the new budget's start date, never before the previous budget's own start date. The newest-created budget remains active until another is created, even when the phone date changes.
+- History contains only past budgets, read-only and grouped newest-first. Expenses belong to their original budget via `sheetId`, not date-range matching.
+- The non-scrollable budget and expense sheets share `hooks/useKeyboardSheet.ts`. It measures the modal container and sheet, accounts for Android Dialog resizing before applying any remaining keyboard lift, and constrains movement against the top safe area. On screens too short for the whole form, keeping the top reachable does not guarantee every control fits; small-screen and large-text behavior still needs device verification.
+
 ## Get started
 
 Use Node.js 22.13 or newer (a supported LTS release is recommended). SDK 57 supports iOS 16.4+ and Android 7+. Native iOS builds require Xcode 26.4+ on macOS or EAS Build; Windows can run Metro and export iOS JavaScript bundles.
@@ -32,7 +42,7 @@ For a physical iPhone, confirm that the installed Expo Go supports **SDK 57**, t
 
 ## Checks
 
-Run these after making changes:
+Run these after making code changes (documentation-only edits do not require builds):
 
 ```bash
 npx tsc --noEmit
@@ -42,8 +52,37 @@ npx expo export --platform ios
 npx expo-doctor
 ```
 
-Application data is persisted locally with AsyncStorage, so core budgeting functionality remains available offline.
+For documentation-only edits, review the changed claims against the implementation and run `git diff --check`.
 
-The SDK upgrade preserves AsyncStorage 2.2.0, the `budget-tracker-storage` key, and persistence version 3 without a schema migration. Do not uninstall the app or clear its storage if you need to retain existing data; Expo Go and standalone builds have separate storage containers.
+## Local data and backups
+
+Application data is persisted locally with AsyncStorage 2.2.0 under `budget-tracker-storage`, so core budgeting functionality remains available offline. Persistence remains at version 3. The current migration resets sheets and expenses when a stored version mismatch triggers it; this applies to restored backups too. The app release version is independent of the persistence version.
+
+Use the Data menu's **Backup** and **Restore** actions:
+
+- On Android, Backup asks for a folder through the Storage Access Framework (SAF) and writes the raw stored JSON as UTF-8 using base name `budget-tracker-backup` and MIME type `application/json`.
+- On iOS, Backup writes `budget-tracker-backup.json` to cache and opens the share sheet. Choose a destination to keep a copy. The app's success message follows share-sheet completion and cannot confirm that a file was actually saved.
+- Restore picks a JSON document with `copyToCacheDirectory: true`, reads its URI using `fetch`, and overwrites the local storage key rather than merging data. It only checks that JSON parses and has truthy `state.sheets` and `state.expenses`; it does not fully validate records or backup-version compatibility.
+- **Restart the app immediately after a successful restore.** The running Zustand store is not rehydrated automatically. Making further changes before restarting can overwrite the restored data with the old in-memory state.
+- Local file reads through `fetch` can fail depending on runtime/provider behavior. The current UI reports all restore failures as "Not a valid backup file", even when the underlying problem is reading the file. A success message is not a guarantee that every record or older backup version is compatible.
+
+Expo Go and standalone APKs have separate private storage. **Expo Go cannot read or recover data from an old installed APK.** Moving data requires a usable backup exported from the app/container that holds it. If the old APK cannot export, launching the latest code in Expo Go does not solve that limitation. Do not uninstall the data-holding app or clear its storage if you need to retain its records.
+
+## PDF export
+
+In History, tap a past budget's document icon and confirm export to generate its budget summary and expense table. `lib/generatePdf.ts` uses `pdf-lib` with standard Helvetica fonts, not a native print service. PDF amounts use the `PHP ` prefix instead of the peso symbol for font compatibility; arbitrary Unicode expense titles are not guaranteed to render.
+
+- Android asks for a destination folder using SAF and writes the PDF there. The requested name is `MM-DD-YY.pdf`, based on the budget's **start date**, not the export date. The file provider controls the final name and duplicate handling. After the write succeeds, History shows a success toast containing the requested filename. Canceling or denying folder access produces no save-success toast.
+- iOS opens the share sheet for a cached `budget-record.pdf`; use Save to Files or another destination. This path does not show the Android save-success toast and cannot confirm that the user saved a copy.
+
+PDFs are reports, not restorable backups. Use JSON Backup for data transfer.
+
+## Builds and upgrades
+
+`eas.json` uses `appVersionSource: "remote"`. Preview and production have `autoIncrement: true`, which increments Android `versionCode` or iOS `buildNumber`, **not** the display version in `app.json`. Development has no auto-increment configured. Update `expo.version` explicitly for a new display/release version.
+
+An Android in-place upgrade requires the same package (`com.budgettracker`) and signing certificate, with an appropriate higher `versionCode`. Preserve the EAS signing credentials and install the update over the existing app rather than uninstalling it. This enables an upgrade but is not a data-retention guarantee: clearing storage, uninstalling, or triggering the reset migration can lose data. Keep a usable backup where possible.
+
+A standalone APK contains the code baked into its build. These changes require rebuilding and installing the new APK; they do not appear in an already installed APK simply by restarting Metro. Expo Go loads current development code but still uses its own storage container.
 
 Dependency alignment uses Reanimated 4.5.1 with Worklets 0.10.1 and preserves the NativeWind/Tailwind 3 Babel and Metro configuration. Refer to the [SDK 57 docs](https://docs.expo.dev/versions/v57.0.0/) and [official upgrade walkthrough](https://docs.expo.dev/workflow/upgrading-expo-sdk-walkthrough/) for future updates.
