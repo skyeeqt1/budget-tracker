@@ -86,7 +86,7 @@ export default function BudgetModal({
               <View className="mb-5 flex-row items-center justify-between">
                 <View className="flex-row items-center">
                   <View className="mr-3 h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50">
-                    <Ionicons name="wallet" size={20} color="#4f46e5" />
+                    <Ionicons name="wallet" size={20} color="#9381FF" />
                   </View>
                   <View>
                     <Text className="text-[22px] font-bold text-ink-900">
@@ -135,9 +135,9 @@ export default function BudgetModal({
               {mode === "create" && (
                 <View
                   className="mb-4 flex-row items-start rounded-2xl px-3.5 py-3"
-                  style={{ backgroundColor: "#eef2ff" }}
+                  style={{ backgroundColor: "#F0EEFF" }}
                 >
-                  <Ionicons name="information-circle" size={15} color="#6366f1" />
+                  <Ionicons name="information-circle" size={15} color="#9381FF" />
                   <Text className="ml-2 flex-1 text-[12px] leading-4 text-indigo-700">
                     This budget is for today. Creating it closes the previous
                     budget into your history.

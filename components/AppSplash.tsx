@@ -1,10 +1,10 @@
-import { useEffect, useRef } from "react";
-import { Animated, Image, StyleSheet, View } from "react-native";
+import { useEffect } from "react";
+import { Animated, Image, StyleSheet, View, useAnimatedValue } from "react-native";
 
 import splashLogo from "@/assets/images/tracker-logo.png";
 
 export default function AppSplash() {
-  const opacity = useRef(new Animated.Value(0)).current;
+  const opacity = useAnimatedValue(0);
 
   useEffect(() => {
     Animated.timing(opacity, {
@@ -29,7 +29,7 @@ export default function AppSplash() {
 
 const styles = StyleSheet.create({
   container: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#ffffff",

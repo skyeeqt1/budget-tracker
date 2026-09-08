@@ -1,13 +1,15 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { cssInterop } from "nativewind";
+import { useEffect, useMemo, useState } from "react";
 import {
   Animated,
   Pressable,
   ScrollView,
   Text,
   View,
+  useAnimatedValue,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -29,6 +31,10 @@ import {
   useBudgetStore,
 } from "@/store/useBudgetStore";
 
+// SDK 57 ships precompiled gradient JSX, so NativeWind cannot intercept its
+// internal views. Resolve the existing classes before passing styles to Expo.
+cssInterop(LinearGradient, { className: "style" });
+
 export default function DashboardScreen() {
   const { sheet, summary, periodExpenses } = useActiveSheet();
   const deleteExpense = useBudgetStore((s) => s.deleteExpense);
@@ -49,7 +55,7 @@ export default function DashboardScreen() {
 
   const hasSheet = !!sheet && !!summary;
   const barColor = !hasSheet
-    ? "#a5b4fc"
+    ? "#B8B8FF"
     : summary.overBudget
       ? "#fb7185"
       : summary.ratio >= 0.75
@@ -72,8 +78,8 @@ export default function DashboardScreen() {
   };
 
   // Hero entrance animation.
-  const heroOpacity = useRef(new Animated.Value(0)).current;
-  const heroTranslateY = useRef(new Animated.Value(16)).current;
+  const heroOpacity = useAnimatedValue(0);
+  const heroTranslateY = useAnimatedValue(16);
 
   useEffect(() => {
     if (!hasSheet) {
@@ -96,7 +102,7 @@ export default function DashboardScreen() {
   }, [hasSheet, heroOpacity, heroTranslateY]);
 
   return (
-    <View className="flex-1 bg-ink-50">
+    <View style={{ flex: 1, backgroundColor: "#F8F7FF" }}>
       <SafeAreaView edges={["top"]} className="flex-1">
         <View className="flex-1 px-5 pb-4 pt-3">
           {/* Header */}
@@ -148,7 +154,7 @@ export default function DashboardScreen() {
               style={{ opacity: heroOpacity, transform: [{ translateY: heroTranslateY }] }}
             >
               <LinearGradient
-                colors={["#4f46e5", "#6d28d9"]}
+                colors={["#9381FF", "#7C5CE0"]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
                 className="mb-5 overflow-hidden rounded-3xl p-6"
@@ -170,7 +176,7 @@ export default function DashboardScreen() {
                       { backgroundColor: "rgba(255,255,255,0.15)", opacity: pressed ? 0.7 : 1 },
                     ]}
                   >
-                    <Ionicons name="pencil" size={12} color="#e0e7ff" />
+                    <Ionicons name="pencil" size={12} color="#F0EEFF" />
                     <Text className="ml-1.5 text-[12px] font-semibold text-indigo-100">
                       Edit
                     </Text>
@@ -204,7 +210,7 @@ export default function DashboardScreen() {
                   style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
                 >
                   <View className="flex-row items-center">
-                    <Ionicons name="receipt-outline" size={16} color="#e0e7ff" />
+                    <Ionicons name="receipt-outline" size={16} color="#F0EEFF" />
                     <View className="ml-2">
                       <Text className="text-[11px] text-indigo-200">Spent</Text>
                       <Text className="text-[15px] font-semibold text-white">
@@ -217,7 +223,7 @@ export default function DashboardScreen() {
                     style={{ backgroundColor: "rgba(255,255,255,0.2)" }}
                   />
                   <View className="flex-row items-center">
-                    <Ionicons name="flag-outline" size={16} color="#e0e7ff" />
+                    <Ionicons name="flag-outline" size={16} color="#F0EEFF" />
                     <View className="ml-2">
                       <Text className="text-[11px] text-indigo-200">Budget</Text>
                       <Text className="text-[15px] font-semibold text-white">
@@ -243,7 +249,7 @@ export default function DashboardScreen() {
           ) : (
             <View className="mb-5 items-center rounded-3xl bg-white px-6 py-10">
               <View className="mb-3 h-14 w-14 items-center justify-center rounded-full bg-indigo-100">
-                <Ionicons name="wallet-outline" size={26} color="#4f46e5" />
+                <Ionicons name="wallet-outline" size={26} color="#9381FF" />
               </View>
               <Text className="text-[17px] font-bold text-ink-900">
                 No active budget

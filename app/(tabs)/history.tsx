@@ -56,7 +56,7 @@ export default function HistoryScreen() {
   const hasAnySheet = sheets.length > 0;
 
   return (
-    <View className="flex-1 bg-ink-50">
+    <View style={{ flex: 1, backgroundColor: "#F8F7FF" }}>
       <SafeAreaView edges={["top"]} className="flex-1">
         <View className="px-5 pb-4 pt-3">
           <Text className="text-[26px] font-bold tracking-tight text-ink-900">
@@ -139,7 +139,7 @@ export default function HistoryScreen() {
                                 ? "#fbbf24"
                                 : "#34d399"
                           }
-                          trackColor="#e2e8f0"
+                          trackColor="#E2E0ED"
                           height={6}
                         />
                       </View>

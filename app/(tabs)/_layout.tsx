@@ -1,12 +1,13 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
-import { Platform } from "react-native";
+import { Platform, type ColorValue } from "react-native";
+import AnimatedTabButton from "../../components/AnimatedTabButton";
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
 interface TabIconProps {
   focused: boolean;
-  color: string;
+  color: ColorValue;
   size: number;
   active: IoniconName;
   inactive: IoniconName;
@@ -20,12 +21,13 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#4f46e5",
+        tabBarButton: (props) => <AnimatedTabButton {...props} />,
+        tabBarActiveTintColor: "#9381FF",
         tabBarInactiveTintColor: "#94a3b8",
         tabBarLabelStyle: { fontSize: 12, fontWeight: "600" },
         tabBarStyle: {
-          backgroundColor: "#ffffff",
-          borderTopColor: "#e2e8f0",
+          backgroundColor: "#F8F7FF",
+          borderTopColor: "#E2E0ED",
           height: Platform.OS === "ios" ? 88 : 68,
           paddingTop: 8,
           paddingBottom: Platform.OS === "ios" ? 24 : 8,

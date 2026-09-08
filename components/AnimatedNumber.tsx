@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Animated, Text, type TextProps } from "react-native";
+import { useEffect, useState } from "react";
+import { Animated, Text, useAnimatedValue, type TextProps } from "react-native";
 
 import { formatCurrency } from "@/lib/format";
 
@@ -12,7 +12,7 @@ interface Props extends TextProps {
  * Uses an Animated.Value + listener (not native driver) so it can drive text.
  */
 export default function AnimatedNumber({ value, ...textProps }: Props) {
-  const anim = useRef(new Animated.Value(value)).current;
+  const anim = useAnimatedValue(value);
   const [display, setDisplay] = useState(value);
 
   useEffect(() => {

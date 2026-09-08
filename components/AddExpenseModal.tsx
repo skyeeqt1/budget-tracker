@@ -125,7 +125,7 @@ export default function AddExpenseModal({ visible, onClose }: Props) {
               <View className="mb-5 flex-row items-center justify-between">
                 <View className="flex-row items-center">
                   <View className="mr-3 h-11 w-11 items-center justify-center rounded-2xl bg-indigo-50">
-                    <Ionicons name="receipt" size={20} color="#4f46e5" />
+                    <Ionicons name="receipt" size={20} color="#9381FF" />
                   </View>
                   <View>
                     <Text className="text-[22px] font-bold text-ink-900">

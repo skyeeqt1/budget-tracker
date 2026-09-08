@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
-import { ComponentProps, useEffect, useRef } from "react";
-import { Animated, Modal, Pressable, Text, View } from "react-native";
+import { ComponentProps, useEffect } from "react";
+import { Animated, Modal, Pressable, Text, View, useAnimatedValue } from "react-native";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -26,15 +26,15 @@ export default function ConfirmModal({
   onCancel,
   destructive = false,
 }: Props) {
-  const iconBg = destructive ? "bg-rose-100" : "bg-indigo-50";
+  const iconBg = destructive ? "bg-rose-100" : "bg-indigo-100";
   const confirmBg = destructive ? "bg-rose-500" : "bg-indigo-600";
-  const iconColor = destructive ? "#e11d48" : "#4f46e5";
+  const iconColor = destructive ? "#e11d48" : "#9381FF";
   const iconName: IoniconName = destructive
     ? "trash-outline"
     : "checkmark-circle-outline";
 
   // Fast fade-in instead of the platform's slower default Modal fade.
-  const opacity = useRef(new Animated.Value(0)).current;
+  const opacity = useAnimatedValue(0);
 
   useEffect(() => {
     if (visible) {
@@ -63,7 +63,7 @@ export default function ConfirmModal({
       <Animated.View
         className="flex-1 items-center justify-center px-6"
         style={{
-          backgroundColor: "rgba(15,23,42,0.45)",
+          backgroundColor: "rgba(26,22,48,0.45)",
           opacity,
         }}
       >

@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { Animated, View } from "react-native";
+import { useEffect } from "react";
+import { Animated, View, useAnimatedValue } from "react-native";
 
 interface Props {
   /** 0..1 fraction of the bar filled */
@@ -11,12 +11,12 @@ interface Props {
 
 export default function ProgressBar({
   progress,
-  barColor = "#6366f1",
-  trackColor = "#e2e8f0",
+  barColor = "#9381FF",
+  trackColor = "#E2E0ED",
   height = 10,
 }: Props) {
   const clamped = Math.max(0, Math.min(1, progress));
-  const anim = useRef(new Animated.Value(0)).current;
+  const anim = useAnimatedValue(0);
 
   useEffect(() => {
     Animated.timing(anim, {
