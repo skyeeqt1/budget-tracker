@@ -1,10 +1,11 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
 import { useState } from "react";
-import { Modal, Pressable, Text, TextInput, View } from "react-native";
+import { Animated, Keyboard, Modal, Pressable, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { sanitizeAmountInput, todayISO } from "@/lib/format";
+import { useKeyboardSheet } from "@/hooks/useKeyboardSheet";
 import { useBudgetStore } from "@/store/useBudgetStore";
 import { BudgetSheet } from "@/types";
 
@@ -21,6 +22,8 @@ export default function BudgetModal({
   mode = "create",
   sheet,
 }: Props) {
+  const { translateY, onContainerLayout, onSheetLayout } =
+    useKeyboardSheet(visible);
   const createBudgetSheet = useBudgetStore((s) => s.createBudgetSheet);
   const updateBudgetSheet = useBudgetStore((s) => s.updateBudgetSheet);
 
@@ -32,11 +35,13 @@ export default function BudgetModal({
   const valid = !Number.isNaN(parsed) && parsed > 0;
 
   const handleOpen = () => {
-    setValue(sheet && sheet.budget > 0 ? String(sheet.budget) : "");
+    setValue(mode === "edit" && sheet ? String(sheet.budget) : "");
     setError(null);
   };
 
   const handleClose = () => {
+    Keyboard.dismiss();
+    setAmountFocused(false);
     setError(null);
     onClose();
   };
@@ -55,7 +60,7 @@ export default function BudgetModal({
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
       () => {}
     );
-    onClose();
+    handleClose();
   };
 
   return (
@@ -66,10 +71,10 @@ export default function BudgetModal({
       onShow={handleOpen}
       onRequestClose={handleClose}
     >
-      <View className="flex-1 justify-end" style={{ backgroundColor: "transparent" }}>
-        <Pressable className="flex-1" onPress={handleClose} />
+      <View onLayout={onContainerLayout} className="flex-1 justify-end" style={{ backgroundColor: "transparent" }}>
+        <Pressable style={{ position: "absolute", inset: 0 }} onPress={handleClose} />
 
-        <View>
+        <Animated.View onLayout={onSheetLayout} style={{ transform: [{ translateY }] }}>
           <SafeAreaView edges={["bottom"]} className="bg-white rounded-t-3xl">
             <View className="px-5 pb-5">
               <View className="mb-4 items-center">
@@ -120,7 +125,6 @@ export default function BudgetModal({
                   placeholder="0.00"
                   placeholderTextColor="#94a3b8"
                   keyboardType="decimal-pad"
-                  autoFocus
                   className="ml-2 flex-1 py-4 text-[24px] font-bold text-ink-900"
                 />
               </View>
@@ -158,7 +162,7 @@ export default function BudgetModal({
               </Pressable>
             </View>
           </SafeAreaView>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
