@@ -67,12 +67,12 @@ export default function HistoryScreen() {
 
   const hasAnySheet = sheets.length > 0;
 
-  const handleLongPress = (
+  const handleExportPress = (
     sheet: BudgetSheet,
     summary: BudgetSummary,
     expenses: Expense[]
   ) => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setExportTarget({ sheet, summary, expenses });
   };
 
@@ -105,7 +105,7 @@ export default function HistoryScreen() {
           </Text>
           {pastSheets.length > 0 && (
             <Text className="mt-1 text-[12px] text-ink-400">
-              Long press a record to export as PDF
+              Tap the document icon to export a record as PDF
             </Text>
           )}
         </View>
@@ -134,12 +134,8 @@ export default function HistoryScreen() {
               {groups.map(({ sheet, summary, expenses }) => {
                 const expanded = expandedIds.has(sheet.id);
                 return (
-                  <Pressable
+                  <View
                     key={sheet.id}
-                    onLongPress={() => handleLongPress(sheet, summary, expenses)}
-                    delayLongPress={500}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Budget record ${formatDateShort(sheet.startDate)} to ${formatDateShort(sheet.endDate)}. Long press to export as PDF.`}
                     className="mb-5 overflow-hidden rounded-3xl bg-white"
                   >
                     {/* Summary header */}
@@ -149,24 +145,36 @@ export default function HistoryScreen() {
                           {formatDateShort(sheet.startDate)} -{" "}
                           {formatDateShort(sheet.endDate)}
                         </Text>
-                        <Pressable
-                          onPress={() => toggleExpanded(sheet.id)}
-                          hitSlop={8}
-                          accessibilityRole="button"
-                          accessibilityLabel={
-                            expanded ? "Hide expenses" : "Show expenses"
-                          }
-                          className="ml-2 shrink-0 flex-row items-center rounded-full bg-ink-100 px-3 py-1.5"
-                        >
-                          <Text className="mr-1 text-[12px] font-semibold text-ink-600">
-                            {expenses.length}
-                          </Text>
-                          <Ionicons
-                            name={expanded ? "chevron-up" : "chevron-down"}
-                            size={14}
-                            color="#64748b"
-                          />
-                        </Pressable>
+                        <View className="ml-2 shrink-0 flex-row items-center">
+                          <Pressable
+                            onPress={() => handleExportPress(sheet, summary, expenses)}
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel="Export as PDF"
+                            style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+                            className="mr-2 h-8 w-8 items-center justify-center rounded-full bg-indigo-100"
+                          >
+                            <Ionicons name="document-text-outline" size={15} color="#9381FF" />
+                          </Pressable>
+                          <Pressable
+                            onPress={() => toggleExpanded(sheet.id)}
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel={
+                              expanded ? "Hide expenses" : "Show expenses"
+                            }
+                            className="flex-row items-center rounded-full bg-ink-100 px-3 py-1.5"
+                          >
+                            <Text className="mr-1 text-[12px] font-semibold text-ink-600">
+                              {expenses.length}
+                            </Text>
+                            <Ionicons
+                              name={expanded ? "chevron-up" : "chevron-down"}
+                              size={14}
+                              color="#64748b"
+                            />
+                          </Pressable>
+                        </View>
                       </View>
                       <Text className="mt-1 text-[13px] text-ink-400">
                         {formatCurrency(summary.budget)} budget ·{" "}
@@ -216,7 +224,7 @@ export default function HistoryScreen() {
                         )}
                       </View>
                     )}
-                  </Pressable>
+                  </View>
                 );
               })}
             </>
