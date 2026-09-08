@@ -1,4 +1,5 @@
 import * as Print from "expo-print";
+import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 
 import { getCategory } from "@/constants/categories";
@@ -118,14 +119,16 @@ function buildHtml({ sheet, expenses, summary }: PdfOptions): string {
 export async function generateBudgetPdf(options: PdfOptions): Promise<void> {
   const html = buildHtml(options);
 
-  const { uri } = await Print.printToFileAsync({
-    html,
-    base64: false,
-  });
+  // Generate PDF to a temp file
+  const { uri: tempUri } = await Print.printToFileAsync({ html });
 
-  await Sharing.shareAsync(uri, {
+  // Copy to cache directory so expo-sharing can read it on Android
+  const dest = new FileSystem.File(FileSystem.Paths.cache, "budget-record.pdf");
+  await new FileSystem.File(tempUri).copy(dest);
+
+  // Open the native share sheet
+  await Sharing.shareAsync(dest.uri, {
     mimeType: "application/pdf",
     dialogTitle: "Save Budget Record",
-    UTI: "com.adobe.pdf",
   });
 }
