@@ -41,7 +41,11 @@ export function createSafePersistence<T extends PersistedBudget>(storage: StateS
         hydrated: true,
       }),
       onRehydrateStorage: () => {
-        status.setState({ phase: "loading" });
+        // Only show loading on initial hydration; a manual rehydrate after
+        // restore must not flash the DataRecovery screen.
+        if (status.getState().phase !== "ready") {
+          status.setState({ phase: "loading" });
+        }
         return (state) => {
           status.setState({ phase: state ? "ready" : "error" });
         };

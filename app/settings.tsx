@@ -2,8 +2,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Application from "expo-application";
 import Constants from "expo-constants";
 import * as Haptics from "expo-haptics";
-import { usePreventRemove } from "expo-router/react-navigation";
-import { useRef, useState } from "react";
+import { useNavigation } from "expo-router";
+import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -20,13 +20,13 @@ import SuccessToast from "@/components/SuccessToast";
 import { exportData, importData } from "@/lib/backup";
 
 export default function SettingsScreen() {
+  const navigation = useNavigation();
   const [operation, setOperation] = useState<"backup" | "restore" | null>(
     null
   );
-  const [restartRequired, setRestartRequired] = useState(false);
   const [backupSaved, setBackupSaved] = useState(false);
+  const [restoreSaved, setRestoreSaved] = useState(false);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
-  const [showRestartModal, setShowRestartModal] = useState(false);
   const operationInFlight = useRef(false);
   const nativeVersion = Constants.expoVersion
     ? null
@@ -34,20 +34,33 @@ export default function SettingsScreen() {
   const version =
     nativeVersion ?? Constants.expoConfig?.version ?? "Unavailable";
 
-  usePreventRemove(operation !== null || restartRequired || showRestartModal, () => {
-    Alert.alert(
-      restartRequired ? "Restart required" : "Data operation in progress",
-      restartRequired
-        ? "Close the app completely and reopen it now."
-        : "Finish or cancel the file operation before going back."
-    );
-  });
+  const shouldPrevent = operation !== null;
+
+  const handleBeforeRemove = useCallback(
+    (e: { preventDefault: () => void }) => {
+      if (!shouldPrevent) return;
+      e.preventDefault();
+      Alert.alert(
+        "Data operation in progress",
+        "Finish or cancel the file operation before going back."
+      );
+    },
+    [shouldPrevent]
+  );
+
+  useLayoutEffect(() => {
+    const nav = navigation;
+    if (!nav) return;
+    nav.addListener("beforeRemove", handleBeforeRemove);
+    return () => nav.removeListener("beforeRemove", handleBeforeRemove);
+  }, [navigation, handleBeforeRemove]);
 
   const handleData = async (action: "backup" | "restore") => {
-    if (operationInFlight.current || restartRequired) return;
+    if (operationInFlight.current) return;
     operationInFlight.current = true;
     setOperation(action);
     setBackupSaved(false);
+    setRestoreSaved(false);
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     try {
       if (action === "restore") {
@@ -79,8 +92,7 @@ export default function SettingsScreen() {
     setOperation("restore");
     try {
       if (await importData()) {
-        setRestartRequired(true);
-        setShowRestartModal(true);
+        setRestoreSaved(true);
       }
     } catch {
       Alert.alert(
@@ -93,8 +105,7 @@ export default function SettingsScreen() {
     }
   };
 
-  const disabled =
-    operation !== null || restartRequired || showRestartModal;
+  const disabled = operation !== null;
 
   return (
     <SafeAreaView edges={["left", "right", "bottom"]} className="flex-1 bg-indigo-50">
@@ -115,25 +126,6 @@ export default function SettingsScreen() {
         >
           Data
         </Text>
-        {restartRequired && (
-          <View
-            accessibilityRole="alert"
-            accessibilityLiveRegion="assertive"
-            className="mb-4 flex-row items-start rounded-2xl border border-emerald-200 bg-emerald-50 p-4"
-          >
-            <View className="mr-3 mt-0.5 h-6 w-6 items-center justify-center rounded-full bg-emerald-100">
-              <Ionicons name="checkmark" size={14} color="#059669" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-[15px] font-semibold text-emerald-800">
-                Restore complete
-              </Text>
-              <Text className="mt-1 text-[13px] leading-5 text-emerald-700">
-                Restart the app to load your restored data.
-              </Text>
-            </View>
-          </View>
-        )}
         <View className="overflow-hidden rounded-3xl border border-ink-200 bg-white">
           {(["backup", "restore"] as const).map((action) => (
             <Pressable
@@ -241,13 +233,7 @@ export default function SettingsScreen() {
             selectable
             className="mt-4 text-[15px] font-semibold text-indigo-800"
           >
-            {nativeVersion ? "Installed version" : "App config version"}:{" "}
-            {version}
-          </Text>
-          <Text className="mt-1 text-[13px] leading-5 text-ink-600">
-            {nativeVersion
-              ? "The version baked into this installed app, which may differ from the current development config."
-              : "Development fallback from Expo config, not a verified installed Budget Tracker version."}
+            Version: {version}
           </Text>
         </View>
       </ScrollView>
@@ -256,7 +242,7 @@ export default function SettingsScreen() {
       <ConfirmModal
         visible={showRestoreConfirm}
         title="Replace local data?"
-        message="Restore replaces all saved budgets and expenses, rather than merging them. Back up first if you need a copy. Use a trusted Budget Tracker JSON backup and restart immediately after restore."
+        message="Restore replaces all saved budgets and expenses, rather than merging them. Back up first if you need a copy. Use a trusted Budget Tracker JSON backup."
         confirmLabel="Choose backup"
         confirmDisabled={false}
         destructive
@@ -264,12 +250,19 @@ export default function SettingsScreen() {
         onConfirm={handleRestoreConfirm}
       />
 
-      {/* Restart guidance modal */}
+      <SuccessToast
+        visible={backupSaved}
+        title="Backup saved"
+        message="Your JSON backup was written to the selected folder."
+        onHidden={() => setBackupSaved(false)}
+      />
+
+      {/* Restore complete modal */}
       <Modal
-        visible={showRestartModal}
+        visible={restoreSaved}
         transparent
         animationType="fade"
-        onRequestClose={() => {}}
+        onRequestClose={() => setRestoreSaved(false)}
       >
         <View className="flex-1 items-center justify-center bg-black/40 px-6">
           <View className="w-full max-w-sm rounded-3xl bg-white p-6">
@@ -278,36 +271,28 @@ export default function SettingsScreen() {
                 <Ionicons name="checkmark-circle" size={32} color="#059669" />
               </View>
               <Text className="text-[20px] font-bold text-ink-900">
-                Backup restored
+                Restore complete
               </Text>
               <Text className="mt-2 text-center text-[14px] leading-6 text-ink-500">
-                Close the app completely and reopen it now.
-              </Text>
-              <Text className="mt-2 text-center text-[13px] leading-5 text-ink-400">
-                The running app has not loaded the restored data. Making changes
-                before restarting can overwrite it.
+                Your data has been loaded and is ready to use.
               </Text>
             </View>
 
             <Pressable
-              onPress={() => setShowRestartModal(false)}
+              onPress={() => {
+                setRestoreSaved(false);
+                navigation.goBack();
+              }}
               accessibilityRole="button"
               className="mt-6 items-center rounded-2xl bg-indigo-600 py-4"
             >
               <Text className="text-[16px] font-bold text-white">
-                I understand
+                Continue
               </Text>
             </Pressable>
           </View>
         </View>
       </Modal>
-
-      <SuccessToast
-        visible={backupSaved}
-        title="Backup saved"
-        message="Your JSON backup was written to the selected folder."
-        onHidden={() => setBackupSaved(false)}
-      />
     </SafeAreaView>
   );
 }

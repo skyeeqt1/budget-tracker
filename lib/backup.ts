@@ -9,6 +9,7 @@ import {
 } from "expo-file-system/legacy";
 
 import { restoreBackup } from "./restoreBackup";
+import { useBudgetStore } from "@/store/useBudgetStore";
 
 const STORAGE_KEY = "budget-tracker-storage";
 
@@ -63,7 +64,10 @@ export async function importData(): Promise<boolean> {
   }
   const raw = await response.text();
 
-  // The running store is not rehydrated; the user must restart immediately.
   await restoreBackup(raw, (validatedRaw) => AsyncStorage.setItem(STORAGE_KEY, validatedRaw));
+
+  // Rehydrate the running store with the restored data.
+  await useBudgetStore.persist.rehydrate();
+
   return true;
 }
