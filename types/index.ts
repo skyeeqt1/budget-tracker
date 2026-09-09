@@ -12,7 +12,7 @@ export interface Expense {
   amount: number;
   category: CategoryId;
   date: string; // ISO date "YYYY-MM-DD"
-  sheetId?: string; // budget sheet this expense belongs to
+  sheetId: string; // budget sheet this expense belongs to
   createdAt: number; // epoch ms, used for stable ordering
 }
 
@@ -24,7 +24,7 @@ export interface BudgetSheet {
   createdAt: number;
 }
 
-export type NewExpense = Omit<Expense, "id" | "createdAt">;
+export type NewExpense = Omit<Expense, "id" | "createdAt" | "sheetId">;
 
 export interface ExpenseDraft {
   title: string;

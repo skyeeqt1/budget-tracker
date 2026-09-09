@@ -1,7 +1,7 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Haptics from "expo-haptics";
 import { ComponentProps, useEffect } from "react";
-import { Animated, Modal, Pressable, Text, View, useAnimatedValue } from "react-native";
+import { ActivityIndicator, Animated, Modal, Pressable, Text, View, useAnimatedValue } from "react-native";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -15,6 +15,7 @@ interface Props {
   onCancel: () => void;
   destructive?: boolean;
   confirmDisabled?: boolean;
+  loading?: boolean;
 }
 
 export default function ConfirmModal({
@@ -27,6 +28,7 @@ export default function ConfirmModal({
   onCancel,
   destructive = false,
   confirmDisabled = false,
+  loading = false,
 }: Props) {
   const iconBg = destructive ? "bg-rose-100" : "bg-indigo-100";
   const confirmBg = destructive ? "bg-rose-500" : "bg-indigo-600";
@@ -97,8 +99,9 @@ export default function ConfirmModal({
               disabled={confirmDisabled}
               accessibilityRole="button"
               style={{ opacity: confirmDisabled ? 0.5 : 1 }}
-              className={`ml-2 flex-1 items-center rounded-2xl py-3.5 ${confirmBg}`}
+              className={`ml-2 flex-1 flex-row items-center justify-center rounded-2xl py-3.5 ${confirmBg}`}
             >
+              {loading && <ActivityIndicator color="#fff" className="mr-2" />}
               <Text className="text-[15px] font-bold text-white">
                 {confirmLabel}
               </Text>

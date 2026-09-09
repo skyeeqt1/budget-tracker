@@ -125,6 +125,7 @@ export default function BudgetModal({
                   placeholder="0.00"
                   placeholderTextColor="#94a3b8"
                   keyboardType="decimal-pad"
+                  accessibilityLabel="Budget amount"
                   className="ml-2 flex-1 py-4 text-[24px] font-bold text-ink-900"
                 />
               </View>
@@ -151,6 +152,7 @@ export default function BudgetModal({
               <Pressable
                 onPress={handleSave}
                 accessibilityRole="button"
+                accessibilityLabel={mode === "edit" ? "Save changes" : "Start budget"}
                 style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}
                 className={`mb-2 items-center rounded-2xl py-4 ${
                   valid ? "bg-indigo-600" : "bg-ink-200"

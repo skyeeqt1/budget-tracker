@@ -31,8 +31,13 @@ export default function ProgressBar({
     outputRange: ["0%", "100%"],
   });
 
+  const pct = Math.round(clamped * 100);
+
   return (
     <View
+      accessibilityRole="progressbar"
+      accessibilityLabel={`Budget usage: ${pct}%`}
+      accessibilityValue={{ min: 0, max: 100, now: pct }}
       className="w-full overflow-hidden rounded-full"
       style={{ height, backgroundColor: trackColor }}
     >

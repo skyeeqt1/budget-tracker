@@ -84,8 +84,7 @@ export default function HistoryScreen() {
     try {
       const fileName = await generateBudgetPdf(exportTarget);
       if (fileName) setToastFile(fileName);
-    } catch (err) {
-      console.error("PDF export failed:", err);
+    } catch {
       Alert.alert("Export Failed", "Could not generate the PDF. Please try again.");
     } finally {
       setExporting(false);
@@ -242,6 +241,7 @@ export default function HistoryScreen() {
         message="Save this budget record as a PDF file to share or print."
         confirmLabel={exporting ? "Exporting..." : "Export"}
         confirmDisabled={exporting}
+        loading={exporting}
         onCancel={() => setExportTarget(null)}
         onConfirm={handleExportConfirm}
       />

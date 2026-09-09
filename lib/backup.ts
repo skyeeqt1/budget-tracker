@@ -8,17 +8,19 @@ import {
   writeAsStringAsync,
 } from "expo-file-system/legacy";
 
+import { restoreBackup } from "./restoreBackup";
+
 const STORAGE_KEY = "budget-tracker-storage";
 
 /** Export AsyncStorage data as a .json file via share sheet / SAF. */
-export async function exportData(): Promise<boolean> {
+export async function exportData(): Promise<"empty" | "cancelled" | "saved" | "shared"> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
-  if (!raw) return false;
+  if (!raw) return "empty";
 
   if (Platform.OS === "android") {
     const permissions =
       await StorageAccessFramework.requestDirectoryPermissionsAsync();
-    if (!permissions.granted) return false;
+    if (!permissions.granted) return "cancelled";
 
     const fileUri = await StorageAccessFramework.createFileAsync(
       permissions.directoryUri,
@@ -28,6 +30,7 @@ export async function exportData(): Promise<boolean> {
     await writeAsStringAsync(fileUri, raw, {
       encoding: EncodingType.UTF8,
     });
+    return "saved";
   } else {
     const { cacheDirectory } = await import("expo-file-system/legacy");
     const fileUri = (cacheDirectory ?? "") + "budget-tracker-backup.json";
@@ -39,7 +42,7 @@ export async function exportData(): Promise<boolean> {
       dialogTitle: "Save Backup",
     });
   }
-  return true;
+  return "shared";
 }
 
 /** Import data from a .json file picked by the user. Returns true on success. */
@@ -51,7 +54,7 @@ export async function importData(): Promise<boolean> {
 
   if (result.canceled || !result.assets?.[0]) return false;
 
-  // copyToCacheDirectory gives us a file:// URI we can read directly
+  // Provider/runtime support for reading this cached URI can still fail.
   const fileUri = result.assets[0].uri;
 
   const response = await fetch(fileUri);
@@ -60,13 +63,7 @@ export async function importData(): Promise<boolean> {
   }
   const raw = await response.text();
 
-  // Validate it's a valid JSON with the expected structure
-  const parsed = JSON.parse(raw);
-  if (!parsed.state?.sheets || !parsed.state?.expenses) {
-    throw new Error("Invalid backup file");
-  }
-
-  // Write directly to AsyncStorage then reload
-  await AsyncStorage.setItem(STORAGE_KEY, raw);
+  // The running store is not rehydrated; the user must restart immediately.
+  await restoreBackup(raw, (validatedRaw) => AsyncStorage.setItem(STORAGE_KEY, validatedRaw));
   return true;
 }

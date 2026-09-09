@@ -1,6 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { createSafePersistence } from "./safePersistence";
 
 import {
   todayISO,
@@ -21,8 +21,11 @@ interface BudgetState {
   deleteExpense: (id: string) => void;
 }
 
+const persistence = createSafePersistence<BudgetState>(AsyncStorage);
+export const budgetHydration = persistence.status;
+
 export const useBudgetStore = create<BudgetState>()(
-  persist(
+  persistence.wrap(
     (set) => ({
       sheets: [],
       expenses: [],
@@ -69,7 +72,8 @@ export const useBudgetStore = create<BudgetState>()(
 
       addExpense: (expense) =>
         set((state) => {
-          const sheetId = currentSheet(state.sheets)?.id;
+          const sheet = currentSheet(state.sheets);
+          if (!sheet) return state;
           return {
             expenses: [
               ...state.expenses,
@@ -77,7 +81,7 @@ export const useBudgetStore = create<BudgetState>()(
                 ...expense,
                 id: uid(),
                 date: expense.date || todayISO(),
-                sheetId,
+                sheetId: sheet.id,
                 createdAt: Date.now(),
               },
             ],
@@ -88,21 +92,7 @@ export const useBudgetStore = create<BudgetState>()(
         set((state) => ({
           expenses: state.expenses.filter((e) => e.id !== id),
         })),
-    }),
-    {
-      name: "budget-tracker-storage",
-      version: 3,
-      storage: createJSONStorage(() => AsyncStorage),
-      migrate: () => ({
-        sheets: [],
-        expenses: [],
-      }),
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.hydrated = true;
-        }
-      },
-    }
+    })
   )
 );
 

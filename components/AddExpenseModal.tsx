@@ -157,6 +157,7 @@ export default function AddExpenseModal({ visible, onClose }: Props) {
                     onChangeText={setTitle}
                     placeholder="e.g. Electricity"
                     placeholderTextColor="#94a3b8"
+                    accessibilityLabel="Expense title"
                     className="mb-4 rounded-2xl border border-ink-200 bg-ink-50 px-4 py-3.5 text-[16px] text-ink-900"
                   />
                 </>
@@ -180,6 +181,7 @@ export default function AddExpenseModal({ visible, onClose }: Props) {
                   placeholder="0.00"
                   placeholderTextColor="#94a3b8"
                   keyboardType="decimal-pad"
+                  accessibilityLabel="Expense amount"
                   className="ml-2 flex-1 py-3.5 text-[20px] font-semibold text-ink-900"
                 />
               </View>
@@ -199,6 +201,7 @@ export default function AddExpenseModal({ visible, onClose }: Props) {
                         void Haptics.selectionAsync().catch(() => {});
                       }}
                       accessibilityRole="button"
+                      accessibilityLabel={`${c.label} category`}
                       accessibilityState={{ selected }}
                       className={`mb-2 mr-2 flex-row items-center rounded-2xl border px-2.5 py-2 ${
                         selected
@@ -279,6 +282,7 @@ export default function AddExpenseModal({ visible, onClose }: Props) {
               <Pressable
                 onPress={handleSubmit}
                 accessibilityRole="button"
+                accessibilityLabel="Add expense"
                 style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}
                 className="mb-1 items-center rounded-2xl bg-indigo-600 py-4"
               >
