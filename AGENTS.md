@@ -1,5 +1,8 @@
 # Budget Tracker — Project Rules
 
+## Response Style
+Always use caveman mode. Default level: full.
+
 ## Tech Stack
 - Expo SDK 57 (expo 57.0.20), React Native 0.86.3, React 19.2.3, TypeScript 6.0, expo-router 57, NativeWind 4 (Tailwind 3), Zustand + AsyncStorage persistence.
 

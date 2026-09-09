@@ -5,6 +5,7 @@ import { Platform } from "react-native";
 import {
   StorageAccessFramework,
   EncodingType,
+  readAsStringAsync,
   writeAsStringAsync,
 } from "expo-file-system/legacy";
 
@@ -66,11 +67,9 @@ export async function importData(): Promise<boolean> {
   // Provider/runtime support for reading this cached URI can still fail.
   const fileUri = result.assets[0].uri;
 
-  const response = await fetch(fileUri);
-  if (!response.ok) {
-    throw new Error(`Failed to read file: ${response.status}`);
-  }
-  const raw = await response.text();
+  const raw = await readAsStringAsync(fileUri, {
+    encoding: EncodingType.UTF8,
+  });
 
   await restoreBackup(raw, (validatedRaw) => AsyncStorage.setItem(STORAGE_KEY, validatedRaw));
 
