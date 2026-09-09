@@ -9,11 +9,10 @@ import { useBudgetStore } from "@/store/useBudgetStore";
 export default function DataRecovery({ loading }: { loading: boolean }) {
   const lock = useRef(false);
   const [busy, setBusy] = useState(false);
-  const [restart, setRestart] = useState(false);
-  const disabled = loading || busy || restart;
+  const disabled = loading || busy;
 
   const run = async (action: "backup" | "restore" | "retry") => {
-    if (loading || lock.current || restart) return;
+    if (loading || lock.current) return;
     lock.current = true;
     setBusy(true);
     try {
@@ -40,7 +39,9 @@ export default function DataRecovery({ loading }: { loading: boolean }) {
             { cancelable: true, onDismiss: () => resolve(false) }
           );
         });
-        if (confirmed && (await importData())) setRestart(true);
+        if (confirmed) await importData();
+        // importData rehydrates the store; phase will change to "ready"
+        // and the app will transition out of this screen automatically.
       }
     } catch {
       Alert.alert(
@@ -61,51 +62,23 @@ export default function DataRecovery({ loading }: { loading: boolean }) {
           <View className="flex-row items-center">
             <View className="mr-3 h-11 w-11 items-center justify-center rounded-2xl bg-white/20">
               <Ionicons
-                name={restart ? "checkmark-circle" : loading ? "hourglass" : "alert-circle"}
+                name={loading ? "hourglass" : "alert-circle"}
                 size={22}
                 color="#fff"
               />
             </View>
             <View className="flex-1">
               <Text className="text-[20px] font-bold text-white">
-                {restart
-                  ? "Restart required"
-                  : loading
-                    ? "Reading data"
-                    : "Data couldn't load"}
+                {loading ? "Reading data" : "Data couldn't load"}
               </Text>
             </View>
           </View>
           <Text className="mt-3 text-[14px] leading-6 text-indigo-100">
-            {restart
-              ? "A backup was restored. Close the app completely and reopen it to load the new data."
-              : loading
-                ? "Editing is blocked while storage is being read. This usually finishes quickly."
-                : "The stored data could not be read, or its format is unsupported. Your original data has not been replaced."}
+            {loading
+              ? "Editing is blocked while storage is being read. This usually finishes quickly."
+              : "The stored data could not be read, or its format is unsupported. Your original data has not been replaced."}
           </Text>
         </View>
-
-        {/* Status banner */}
-        {restart && (
-          <View
-            accessibilityRole="alert"
-            accessibilityLiveRegion="assertive"
-            className="mb-5 flex-row items-start rounded-2xl border border-emerald-200 bg-emerald-50 p-4"
-          >
-            <View className="mr-3 mt-0.5 h-6 w-6 items-center justify-center rounded-full bg-emerald-100">
-              <Ionicons name="checkmark" size={14} color="#059669" />
-            </View>
-            <View className="flex-1">
-              <Text className="text-[15px] font-semibold text-emerald-800">
-                Restore complete
-              </Text>
-              <Text className="mt-1 text-[13px] leading-5 text-emerald-700">
-                The running app has not loaded the restored data yet. Editing is
-                blocked until you restart.
-              </Text>
-            </View>
-          </View>
-        )}
 
         {loading && (
           <View className="mb-5 flex-row items-start rounded-2xl border border-indigo-200 bg-indigo-50 p-4">
@@ -124,7 +97,7 @@ export default function DataRecovery({ loading }: { loading: boolean }) {
           </View>
         )}
 
-        {!restart && !loading && (
+        {!loading && (
           <View className="mb-5 flex-row items-start rounded-2xl border border-rose-200 bg-rose-50 p-4">
             <View className="mr-3 mt-0.5 h-6 w-6 items-center justify-center rounded-full bg-rose-100">
               <Ionicons name="warning" size={14} color="#e11d48" />

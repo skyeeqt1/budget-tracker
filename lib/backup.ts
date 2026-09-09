@@ -9,8 +9,17 @@ import {
 } from "expo-file-system/legacy";
 
 import { restoreBackup } from "./restoreBackup";
+import { useBudgetStore } from "@/store/useBudgetStore";
 
 const STORAGE_KEY = "budget-tracker-storage";
+
+function backupFileName(): string {
+  const now = new Date();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  const yy = String(now.getFullYear()).slice(-2);
+  return `budget-tracker-backup-${mm}-${dd}-${yy}`;
+}
 
 /** Export AsyncStorage data as a .json file via share sheet / SAF. */
 export async function exportData(): Promise<"empty" | "cancelled" | "saved" | "shared"> {
@@ -24,7 +33,7 @@ export async function exportData(): Promise<"empty" | "cancelled" | "saved" | "s
 
     const fileUri = await StorageAccessFramework.createFileAsync(
       permissions.directoryUri,
-      "budget-tracker-backup",
+      backupFileName(),
       "application/json"
     );
     await writeAsStringAsync(fileUri, raw, {
@@ -33,7 +42,7 @@ export async function exportData(): Promise<"empty" | "cancelled" | "saved" | "s
     return "saved";
   } else {
     const { cacheDirectory } = await import("expo-file-system/legacy");
-    const fileUri = (cacheDirectory ?? "") + "budget-tracker-backup.json";
+    const fileUri = (cacheDirectory ?? "") + `${backupFileName()}.json`;
     await writeAsStringAsync(fileUri, raw, {
       encoding: EncodingType.UTF8,
     });
@@ -63,7 +72,10 @@ export async function importData(): Promise<boolean> {
   }
   const raw = await response.text();
 
-  // The running store is not rehydrated; the user must restart immediately.
   await restoreBackup(raw, (validatedRaw) => AsyncStorage.setItem(STORAGE_KEY, validatedRaw));
+
+  // Rehydrate the running store with the restored data.
+  await useBudgetStore.persist.rehydrate();
+
   return true;
 }
