@@ -82,7 +82,7 @@ export default function SuccessToast({
     <Animated.View
       style={{
         position: "absolute",
-        top: 16,
+        top: 0,
         alignSelf: "center",
         width: SCREEN_W - 48,
         transform: [{ translateY }],
