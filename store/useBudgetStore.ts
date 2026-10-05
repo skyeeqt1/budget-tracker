@@ -18,6 +18,7 @@ interface BudgetState {
     data: Partial<Pick<BudgetSheet, "budget" | "startDate" | "endDate">>
   ) => void;
   addExpense: (expense: NewExpense) => void;
+  updateExpense: (id: string, data: Partial<Pick<Expense, "title" | "amount" | "category" | "date">>) => void;
   deleteExpense: (id: string) => void;
 }
 
@@ -91,6 +92,13 @@ export const useBudgetStore = create<BudgetState>()(
       deleteExpense: (id) =>
         set((state) => ({
           expenses: state.expenses.filter((e) => e.id !== id),
+        })),
+
+      updateExpense: (id, data) =>
+        set((state) => ({
+          expenses: state.expenses.map((e) =>
+            e.id === id ? { ...e, ...data } : e
+          ),
         })),
     })
   )
