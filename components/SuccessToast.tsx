@@ -7,6 +7,8 @@ import {
   View,
 } from "react-native";
 
+import { useThemeStore } from "@/store/useThemeStore";
+
 const SCREEN_W = Dimensions.get("window").width;
 
 interface Props {
@@ -28,6 +30,7 @@ export default function SuccessToast({
 }: Props) {
   const [translateY] = useState(() => new Animated.Value(-120));
   const [opacity] = useState(() => new Animated.Value(0));
+  const { theme } = useThemeStore();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -80,24 +83,31 @@ export default function SuccessToast({
 
   return (
     <Animated.View
-      style={{
-        position: "absolute",
-        top: 0,
-        alignSelf: "center",
-        width: SCREEN_W - 48,
-        transform: [{ translateY }],
-        opacity,
-        zIndex: 999,
-      }}
-      className="rounded-2xl bg-white px-5 py-4"
+      style={[
+        {
+          position: "absolute",
+          top: 0,
+          alignSelf: "center",
+          width: SCREEN_W - 48,
+          transform: [{ translateY }],
+          opacity,
+          zIndex: 999,
+          backgroundColor: theme.secondary,
+        },
+      ]}
+      className="rounded-2xl px-5 py-4"
     >
       <View className="flex-row items-center">
         <View className={`mr-3 h-10 w-10 items-center justify-center rounded-full ${iconBg}`}>
           <Ionicons name={iconName} size={22} color={iconColor} />
         </View>
         <View className="flex-1">
-          <Text className="text-[15px] font-bold text-ink-900">{displayTitle}</Text>
-          <Text className="mt-0.5 text-[12px] text-ink-500">{message}</Text>
+          <Text className="text-[15px] font-bold" style={{ color: theme.text }}>
+            {displayTitle}
+          </Text>
+          <Text className="mt-0.5 text-[12px]" style={{ color: theme.muted }}>
+            {message}
+          </Text>
         </View>
       </View>
 

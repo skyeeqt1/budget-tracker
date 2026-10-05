@@ -17,11 +17,13 @@ import {
   sortNewest,
   useBudgetStore,
 } from "@/store/useBudgetStore";
+import { useThemeStore } from "@/store/useThemeStore";
 import { BudgetSheet, BudgetSummary, Expense } from "@/types";
 
 export default function HistoryScreen() {
   const sheets = useBudgetStore((s) => s.sheets);
   const allExpenses = useBudgetStore((s) => s.expenses);
+  const { theme } = useThemeStore();
 
   // Sheets whose expense list is expanded. Everything starts collapsed.
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -93,13 +95,13 @@ export default function HistoryScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#F8F7FF" }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
       <SafeAreaView edges={["top"]} className="flex-1">
         <View className="px-5 pb-4 pt-3">
-          <Text className="text-[26px] font-bold tracking-tight text-ink-900">
+          <Text className="text-[26px] font-bold tracking-tight" style={{ color: theme.text }}>
             History
           </Text>
-          <Text className="mt-0.5 text-[14px] text-ink-400">
+          <Text className="mt-0.5 text-[14px]" style={{ color: theme.muted }}>
             {pastSheets.length === 0
               ? "Your closed budgets will appear here"
               : `${pastSheets.length} closed budget${
@@ -107,7 +109,7 @@ export default function HistoryScreen() {
                 }`}
           </Text>
           {pastSheets.length > 0 && (
-            <Text className="mt-1 text-[12px] text-ink-400">
+            <Text className="mt-1 text-[12px]" style={{ color: theme.muted }}>
               Tap the document icon to export a record as PDF
             </Text>
           )}
@@ -119,14 +121,17 @@ export default function HistoryScreen() {
           showsVerticalScrollIndicator={false}
         >
           {pastSheets.length === 0 ? (
-            <View className="items-center rounded-3xl bg-white px-6 py-16">
-              <View className="mb-3 h-14 w-14 items-center justify-center rounded-full bg-ink-100">
-                <Ionicons name="layers-outline" size={26} color="#94a3b8" />
+            <View className="items-center rounded-3xl px-6 py-16" style={{ backgroundColor: theme.secondary }}>
+              <View
+                className="mb-3 h-14 w-14 items-center justify-center rounded-full"
+                style={{ backgroundColor: theme.subtle }}
+              >
+                <Ionicons name="layers-outline" size={26} color={theme.muted} />
               </View>
-              <Text className="text-[15px] font-semibold text-ink-700">
+              <Text className="text-[15px] font-semibold" style={{ color: theme.text }}>
                 {hasAnySheet ? "No past budgets yet" : "No budget sheets yet"}
               </Text>
-              <Text className="mt-1 text-center text-[13px] text-ink-400">
+              <Text className="mt-1 text-center text-[13px]" style={{ color: theme.muted }}>
                 {hasAnySheet
                   ? "When you start a new budget, the previous one will show up here for review."
                   : "Create your first budget to start tracking expenses."}
@@ -139,12 +144,13 @@ export default function HistoryScreen() {
                 return (
                   <View
                     key={sheet.id}
-                    className="mb-5 overflow-hidden rounded-3xl bg-white"
+                    className="mb-5 overflow-hidden rounded-3xl"
+                    style={{ backgroundColor: theme.secondary }}
                   >
                     {/* Summary header */}
                     <View className="px-4 pb-3 pt-4">
                       <View className="flex-row items-center justify-between">
-                        <Text className="flex-1 text-[15px] font-bold text-ink-900">
+                        <Text className="flex-1 text-[15px] font-bold" style={{ color: theme.text }}>
                           {formatDateShort(sheet.startDate)} -{" "}
                           {formatDateShort(sheet.endDate)}
                         </Text>
@@ -154,10 +160,10 @@ export default function HistoryScreen() {
                             hitSlop={8}
                             accessibilityRole="button"
                             accessibilityLabel="Export as PDF"
-                            style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-                            className="mr-2 h-8 w-8 items-center justify-center rounded-full bg-indigo-100"
+                            style={{ backgroundColor: `${theme.primary}20` }}
+                            className="mr-2 h-8 w-8 items-center justify-center rounded-full"
                           >
-                            <Ionicons name="document-text-outline" size={15} color="#9381FF" />
+                            <Ionicons name="document-text-outline" size={15} color={theme.primary} />
                           </Pressable>
                           <Pressable
                             onPress={() => toggleExpanded(sheet.id)}
@@ -166,20 +172,24 @@ export default function HistoryScreen() {
                             accessibilityLabel={
                               expanded ? "Hide expenses" : "Show expenses"
                             }
-                            className="flex-row items-center rounded-full bg-ink-100 px-3 py-1.5"
+                            className="flex-row items-center rounded-full px-3 py-1.5"
+                            style={{ backgroundColor: theme.subtle }}
                           >
-                            <Text className="mr-1 text-[12px] font-semibold text-ink-600">
+                            <Text
+                              className="mr-1 text-[12px] font-semibold"
+                              style={{ color: theme.text }}
+                            >
                               {expenses.length}
                             </Text>
                             <Ionicons
                               name={expanded ? "chevron-up" : "chevron-down"}
                               size={14}
-                              color="#64748b"
+                              color={theme.muted}
                             />
                           </Pressable>
                         </View>
                       </View>
-                      <Text className="mt-1 text-[13px] text-ink-400">
+                      <Text className="mt-1 text-[13px]" style={{ color: theme.muted }}>
                         {formatCurrency(summary.budget)} budget ·{" "}
                         {formatCurrency(summary.spent)} spent
                       </Text>
@@ -193,7 +203,7 @@ export default function HistoryScreen() {
                                 ? "#fbbf24"
                                 : "#34d399"
                           }
-                          trackColor="#E2E0ED"
+                          trackColor={theme.border}
                           height={6}
                         />
                       </View>
@@ -211,9 +221,15 @@ export default function HistoryScreen() {
 
                     {/* Expenses (collapsed by default) */}
                     {expanded && (
-                      <View className="border-t border-ink-100 px-4 py-1">
+                      <View
+                        className="border-t px-4 py-1"
+                        style={{ borderTopColor: theme.border }}
+                      >
                         {expenses.length === 0 ? (
-                          <Text className="py-6 text-center text-[13px] text-ink-400">
+                          <Text
+                            className="py-6 text-center text-[13px]"
+                            style={{ color: theme.muted }}
+                          >
                             No expenses in this period.
                           </Text>
                         ) : (

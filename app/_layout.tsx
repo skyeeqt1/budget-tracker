@@ -6,11 +6,13 @@ import { useStore } from "zustand";
 import AppSplash from "@/components/AppSplash";
 import DataRecovery from "@/components/DataRecovery";
 import { budgetHydration } from "@/store/useBudgetStore";
+import { useThemeStore } from "@/store/useThemeStore";
 
 import "../global.css";
 
 export default function RootLayout() {
   const phase = useStore(budgetHydration, (s) => s.phase);
+  const { theme } = useThemeStore();
   const [timerDone, setTimerDone] = useState(false);
   const [readSlow, setReadSlow] = useState(false);
 
@@ -39,11 +41,11 @@ export default function RootLayout() {
           options={{
             title: "Settings",
             headerBackButtonDisplayMode: "minimal",
-            headerTintColor: "#6346B8",
-            headerTitleStyle: { color: "#0F172A" },
-            headerStyle: { backgroundColor: "#F8F7FF" },
+            headerTintColor: theme.primary,
+            headerTitleStyle: { color: theme.text },
+            headerStyle: { backgroundColor: theme.background },
             headerShadowVisible: false,
-            contentStyle: { backgroundColor: "#F8F7FF" },
+            contentStyle: { backgroundColor: theme.background },
           }}
         />
         <Stack.Screen name="+not-found" />

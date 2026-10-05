@@ -17,10 +17,13 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import ConfirmModal from "@/components/ConfirmModal";
 import SuccessToast from "@/components/SuccessToast";
+import { THEMES } from "@/constants/themes";
 import { exportData, importData } from "@/lib/backup";
+import { useThemeStore } from "@/store/useThemeStore";
 
 export default function SettingsScreen() {
   const navigation = useNavigation();
+  const { themeId, theme, setTheme } = useThemeStore();
   const [operation, setOperation] = useState<"backup" | "restore" | null>(
     null
   );
@@ -108,13 +111,19 @@ export default function SettingsScreen() {
   const disabled = operation !== null;
 
   return (
-    <SafeAreaView edges={["left", "right", "bottom"]} className="flex-1 bg-indigo-50">
+    <SafeAreaView edges={["left", "right", "bottom"]} className="flex-1" style={{ backgroundColor: theme.background }}>
       <ScrollView contentContainerClassName="px-5 pt-3 pb-8">
-        <View className="mb-7 rounded-3xl bg-indigo-900 p-5">
-          <Text className="text-[22px] font-bold text-white">
+        <View className="mb-7 rounded-3xl p-5" style={{ backgroundColor: theme.primary }}>
+          <Text
+            className="text-[22px] font-bold"
+            style={{ color: theme.onPrimary }}
+          >
             Your budget, your records
           </Text>
-          <Text className="mt-2 text-[14px] leading-6 text-indigo-100">
+          <Text
+            className="mt-2 text-[14px] leading-6"
+            style={{ color: theme.onPrimary, opacity: 0.85 }}
+          >
             Keep a copy of your data and find a little guidance when you need
             it.
           </Text>
@@ -122,11 +131,15 @@ export default function SettingsScreen() {
 
         <Text
           accessibilityRole="header"
-          className="mb-3 text-[13px] font-bold uppercase tracking-widest text-indigo-800"
+          className="mb-3 text-[13px] font-bold uppercase tracking-widest"
+          style={{ color: theme.primary }}
         >
           Data
         </Text>
-        <View className="overflow-hidden rounded-3xl border border-ink-200 bg-white">
+        <View
+          className="overflow-hidden rounded-3xl border"
+          style={{ backgroundColor: theme.secondary, borderColor: theme.border }}
+        >
           {(["backup", "restore"] as const).map((action) => (
             <Pressable
               key={action}
@@ -140,34 +153,32 @@ export default function SettingsScreen() {
                   : "Confirm replacement of local data, then choose a backup file"
               }
               accessibilityState={{ disabled, busy: operation === action }}
-              style={({ pressed }) => ({
-                opacity: disabled ? 0.5 : pressed ? 0.7 : 1,
-              })}
+              style={{ opacity: disabled ? 0.5 : 1 }}
               className="flex-row items-center p-5"
             >
-              <View className="mr-4 h-11 w-11 items-center justify-center rounded-2xl bg-indigo-100">
+              <View className="mr-4 h-11 w-11 items-center justify-center rounded-2xl" style={{ backgroundColor: `${theme.primary}20` }}>
                 <Ionicons
                   name={
                     action === "backup" ? "save-outline" : "folder-open-outline"
                   }
                   size={22}
-                  color="#6346B8"
+                  color={theme.primary}
                 />
               </View>
               <View className="flex-1">
-                <Text className="text-[16px] font-semibold text-ink-900">
+                <Text className="text-[16px] font-semibold" style={{ color: theme.text }}>
                   {action === "backup" ? "Backup" : "Restore"}
                 </Text>
-                <Text className="mt-1 text-[13px] leading-5 text-ink-600">
+                <Text className="mt-1 text-[13px] leading-5" style={{ color: theme.muted }}>
                   {action === "backup"
                     ? "Save a JSON copy of your records"
                     : "Replace local data from a JSON backup"}
                 </Text>
               </View>
               {operation === action ? (
-                <ActivityIndicator color="#6346B8" className="ml-3" />
+                <ActivityIndicator color={theme.primary} className="ml-3" />
               ) : (
-                <Ionicons name="chevron-forward" size={18} color="#64748B" />
+                <Ionicons name="chevron-forward" size={18} color={theme.muted} />
               )}
             </Pressable>
           ))}
@@ -175,63 +186,130 @@ export default function SettingsScreen() {
 
         <Text
           accessibilityRole="header"
-          className="mb-3 mt-7 text-[13px] font-bold uppercase tracking-widest text-indigo-800"
+          className="mb-3 mt-7 text-[13px] font-bold uppercase tracking-widest"
+          style={{ color: theme.primary }}
+        >
+          Theme
+        </Text>
+        <View
+          className="rounded-3xl border p-5"
+          style={{ backgroundColor: theme.secondary, borderColor: theme.border }}
+        >
+          <Text className="mb-4 text-[14px]" style={{ color: theme.muted }}>
+            Choose a color theme for the app
+          </Text>
+          <View className="flex-row flex-wrap justify-between">
+            {THEMES.map((t) => {
+              const isSelected = themeId === t.id;
+              return (
+                <Pressable
+                  key={t.id}
+                  onPress={() => {
+                    setTheme(t.id);
+                    void Haptics.selectionAsync().catch(() => {});
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${t.label} theme`}
+                  accessibilityState={{ selected: isSelected }}
+                  className="mb-3 items-center"
+                >
+                  <View
+                    className={`h-12 w-12 items-center justify-center rounded-full ${
+                      isSelected ? "border-2" : "border"
+                    }`}
+                    style={{
+                      borderColor: isSelected ? theme.primary : theme.border,
+                    }}
+                  >
+                    <View
+                      className="h-10 w-10 rounded-full"
+                      style={{ backgroundColor: t.primary }}
+                    />
+                  </View>
+                  {isSelected && (
+                    <View
+                      className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full"
+                      style={{ backgroundColor: theme.primary }}
+                    >
+                      <Ionicons name="checkmark" size={12} color={theme.onPrimary} />
+                    </View>
+                  )}
+                  <Text className="mt-1 text-[11px]" style={{ color: theme.muted }}>
+                    {t.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+
+        <Text
+          accessibilityRole="header"
+          className="mb-3 mt-7 text-[13px] font-bold uppercase tracking-widest"
+          style={{ color: theme.primary }}
         >
           Information
         </Text>
-        <View className="rounded-3xl border border-ink-200 bg-white p-5">
+        <View
+          className="rounded-3xl border p-5"
+          style={{ backgroundColor: theme.secondary, borderColor: theme.border }}
+        >
           <Text
             accessibilityRole="header"
-            className="text-[17px] font-bold text-ink-900"
+            className="text-[17px] font-bold"
+            style={{ color: theme.text }}
           >
             How to use
           </Text>
-          <Text className="mt-3 text-[14px] leading-6 text-ink-600">
+          <Text className="mt-3 text-[14px] leading-6" style={{ color: theme.muted }}>
             1. Tap New Budget on Home and enter your budget in Philippine
             pesos. It starts today and stays active until you create another
             budget.
           </Text>
-          <Text className="mt-3 text-[14px] leading-6 text-ink-600">
+          <Text className="mt-3 text-[14px] leading-6" style={{ color: theme.muted }}>
             2. Tap Add to record an expense and choose a category. Home shows
-            spending and the remaining balance. Use Edit on the budget card to
-            adjust the amount.
+            spending and the remaining balance. Use Add on the budget card to
+            increase the budget amount.
           </Text>
-          <Text className="mt-3 text-[14px] leading-6 text-ink-600">
+          <Text className="mt-3 text-[14px] leading-6" style={{ color: theme.muted }}>
             3. Creating a new budget closes the previous one. Find past budgets
             in History, where records are read-only and each budget can be
             exported as a PDF.
           </Text>
-          <View className="my-5 h-px bg-ink-200" />
+          <View className="my-5 h-px" style={{ backgroundColor: theme.border }} />
           <Text
             accessibilityRole="header"
-            className="text-[17px] font-bold text-ink-900"
+            className="text-[17px] font-bold"
+            style={{ color: theme.text }}
           >
             Privacy & local storage
           </Text>
-          <Text className="mt-3 text-[14px] leading-6 text-ink-600">
+          <Text className="mt-3 text-[14px] leading-6" style={{ color: theme.muted }}>
             Your budgets and expenses are stored on this device, with no
             automatic cloud sync. Uninstalling the app or clearing its storage
             can delete your records. Keep a backup of important data.
           </Text>
-          <Text className="mt-3 text-[14px] leading-6 text-ink-600">
+          <Text className="mt-3 text-[14px] leading-6" style={{ color: theme.muted }}>
             Backup files and PDF reports contain financial information and are
             not encrypted. Save and share them carefully. A storage service you
             choose may keep a copy in the cloud.
           </Text>
-          <View className="my-5 h-px bg-ink-200" />
+          <View className="my-5 h-px" style={{ backgroundColor: theme.border }} />
           <Text
             accessibilityRole="header"
-            className="text-[17px] font-bold text-ink-900"
+            className="text-[17px] font-bold"
+            style={{ color: theme.text }}
           >
             About
           </Text>
-          <Text className="mt-3 text-[14px] leading-6 text-ink-600">
+          <Text className="mt-3 text-[14px] leading-6" style={{ color: theme.muted }}>
             Budget Tracker makes everyday personal budgeting in Philippine pesos
             simple, with offline budgets, expenses, and history.
           </Text>
           <Text
             selectable
-            className="mt-4 text-[15px] font-semibold text-indigo-800"
+            className="mt-4 text-[15px] font-semibold"
+            style={{ color: theme.primary }}
           >
             Version: {version}
           </Text>
@@ -265,15 +343,15 @@ export default function SettingsScreen() {
         onRequestClose={() => setRestoreSaved(false)}
       >
         <View className="flex-1 items-center justify-center bg-black/40 px-6">
-          <View className="w-full max-w-sm rounded-3xl bg-white p-6">
+          <View className="w-full max-w-sm rounded-3xl p-6" style={{ backgroundColor: theme.secondary }}>
             <View className="items-center">
               <View className="mb-4 h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
                 <Ionicons name="checkmark-circle" size={32} color="#059669" />
               </View>
-              <Text className="text-[20px] font-bold text-ink-900">
+              <Text className="text-[20px] font-bold" style={{ color: theme.text }}>
                 Restore complete
               </Text>
-              <Text className="mt-2 text-center text-[14px] leading-6 text-ink-500">
+              <Text className="mt-2 text-center text-[14px] leading-6" style={{ color: theme.muted }}>
                 Your data has been loaded and is ready to use.
               </Text>
             </View>
@@ -284,9 +362,13 @@ export default function SettingsScreen() {
                 navigation.goBack();
               }}
               accessibilityRole="button"
-              className="mt-6 items-center rounded-2xl bg-indigo-600 py-4"
+              className="mt-6 items-center rounded-2xl py-4"
+              style={{ backgroundColor: theme.primary }}
             >
-              <Text className="text-[16px] font-bold text-white">
+              <Text
+                className="text-[16px] font-bold"
+                style={{ color: theme.onPrimary }}
+              >
                 Continue
               </Text>
             </Pressable>

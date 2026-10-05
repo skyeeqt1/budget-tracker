@@ -2,6 +2,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Tabs } from "expo-router";
 import { Platform, type ColorValue } from "react-native";
 import AnimatedTabButton from "../../components/AnimatedTabButton";
+import { useThemeStore } from "../../store/useThemeStore";
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -18,16 +19,17 @@ function TabIcon({ focused, color, size, active, inactive }: TabIconProps) {
 }
 
 export default function TabLayout() {
+  const { theme } = useThemeStore();
   return (
     <Tabs
       screenOptions={{
         tabBarButton: (props) => <AnimatedTabButton {...props} />,
-        tabBarActiveTintColor: "#9381FF",
+        tabBarActiveTintColor: theme.primary,
         tabBarInactiveTintColor: "#94a3b8",
         tabBarLabelStyle: { fontSize: 12, fontWeight: "600" },
         tabBarStyle: {
-          backgroundColor: "#F8F7FF",
-          borderTopColor: "#E2E0ED",
+          backgroundColor: theme.background,
+          borderTopColor: theme.secondary,
           height: Platform.OS === "ios" ? 88 : 68,
           paddingTop: 8,
           paddingBottom: Platform.OS === "ios" ? 24 : 8,
