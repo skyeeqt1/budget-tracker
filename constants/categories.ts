@@ -44,7 +44,7 @@ export const CATEGORIES: CategoryMeta[] = [
   {
     id: "other",
     label: "Other",
-    icon: "ellipsis-horizontal-circle",
+    icon: "pricetag",
     color: "#64748b",
     textColor: "#ffffff",
     bgColor: "#f1f5f9",
