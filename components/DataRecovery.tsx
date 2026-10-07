@@ -5,10 +5,12 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { exportData, importData } from "@/lib/backup";
 import { useBudgetStore } from "@/store/useBudgetStore";
+import { useThemeStore } from "@/store/useThemeStore";
 
 export default function DataRecovery({ loading }: { loading: boolean }) {
   const lock = useRef(false);
   const [busy, setBusy] = useState(false);
+  const { theme } = useThemeStore();
   const disabled = loading || busy;
 
   const run = async (action: "backup" | "restore" | "retry") => {
@@ -55,25 +57,34 @@ export default function DataRecovery({ loading }: { loading: boolean }) {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-indigo-50">
+    <SafeAreaView className="flex-1" style={{ backgroundColor: theme.background }}>
       <ScrollView contentContainerClassName="px-5 pt-3 pb-8">
         {/* Header card */}
-        <View className="mb-7 rounded-3xl bg-indigo-900 p-5">
+        <View className="mb-7 rounded-3xl p-5" style={{ backgroundColor: theme.primary }}>
           <View className="flex-row items-center">
-            <View className="mr-3 h-11 w-11 items-center justify-center rounded-2xl bg-white/20">
+            <View
+              className="mr-3 h-11 w-11 items-center justify-center rounded-2xl"
+              style={{ backgroundColor: `${theme.onPrimary}33` }}
+            >
               <Ionicons
                 name={loading ? "hourglass" : "alert-circle"}
                 size={22}
-                color="#fff"
+                color={theme.onPrimary}
               />
             </View>
             <View className="flex-1">
-              <Text className="text-[20px] font-bold text-white">
+              <Text
+                className="text-[20px] font-bold"
+                style={{ color: theme.onPrimary }}
+              >
                 {loading ? "Reading data" : "Data couldn't load"}
               </Text>
             </View>
           </View>
-          <Text className="mt-3 text-[14px] leading-6 text-indigo-100">
+          <Text
+            className="mt-3 text-[14px] leading-6"
+            style={{ color: theme.onPrimary, opacity: 0.85 }}
+          >
             {loading
               ? "Editing is blocked while storage is being read. This usually finishes quickly."
               : "The stored data could not be read, or its format is unsupported. Your original data has not been replaced."}
@@ -81,15 +92,21 @@ export default function DataRecovery({ loading }: { loading: boolean }) {
         </View>
 
         {loading && (
-          <View className="mb-5 flex-row items-start rounded-2xl border border-indigo-200 bg-indigo-50 p-4">
-            <View className="mr-3 mt-0.5 h-6 w-6 items-center justify-center rounded-full bg-indigo-100">
-              <Ionicons name="hourglass" size={14} color="#6346B8" />
+          <View
+            className="mb-5 flex-row items-start rounded-2xl border p-4"
+            style={{ borderColor: theme.border, backgroundColor: theme.subtle }}
+          >
+            <View
+              className="mr-3 mt-0.5 h-6 w-6 items-center justify-center rounded-full"
+              style={{ backgroundColor: `${theme.primary}20` }}
+            >
+              <Ionicons name="hourglass" size={14} color={theme.primary} />
             </View>
             <View className="flex-1">
-              <Text className="text-[15px] font-semibold text-indigo-800">
+              <Text className="text-[15px] font-semibold" style={{ color: theme.text }}>
                 Still loading
               </Text>
-              <Text className="mt-1 text-[13px] leading-5 text-indigo-700">
+              <Text className="mt-1 text-[13px] leading-5" style={{ color: theme.muted }}>
                 If this takes too long, close the app completely and reopen it.
                 Do not uninstall or clear storage.
               </Text>
@@ -98,15 +115,18 @@ export default function DataRecovery({ loading }: { loading: boolean }) {
         )}
 
         {!loading && (
-          <View className="mb-5 flex-row items-start rounded-2xl border border-rose-200 bg-rose-50 p-4">
+          <View
+            className="mb-5 flex-row items-start rounded-2xl border p-4"
+            style={{ borderColor: theme.border, backgroundColor: theme.secondary }}
+          >
             <View className="mr-3 mt-0.5 h-6 w-6 items-center justify-center rounded-full bg-rose-100">
               <Ionicons name="warning" size={14} color="#e11d48" />
             </View>
             <View className="flex-1">
-              <Text className="text-[15px] font-semibold text-rose-800">
+              <Text className="text-[15px] font-semibold text-rose-500">
                 Storage error
               </Text>
-              <Text className="mt-1 text-[13px] leading-5 text-rose-700">
+              <Text className="mt-1 text-[13px] leading-5" style={{ color: theme.muted }}>
                 The app could not read your saved data. Export the original
                 first, then try restoring from a backup.
               </Text>
@@ -117,11 +137,15 @@ export default function DataRecovery({ loading }: { loading: boolean }) {
         {/* Actions */}
         <Text
           accessibilityRole="header"
-          className="mb-3 text-[13px] font-bold uppercase tracking-widest text-indigo-800"
+          className="mb-3 text-[13px] font-bold uppercase tracking-widest"
+          style={{ color: theme.primary }}
         >
           Actions
         </Text>
-        <View className="overflow-hidden rounded-3xl border border-ink-200 bg-white">
+        <View
+          className="overflow-hidden rounded-3xl border"
+          style={{ backgroundColor: theme.secondary, borderColor: theme.border }}
+        >
           {(
             [
               {
@@ -150,35 +174,39 @@ export default function DataRecovery({ loading }: { loading: boolean }) {
               accessibilityRole="button"
               accessibilityState={{ disabled, busy }}
               onPress={() => void run(action.key)}
-              style={({ pressed }) => ({
-                opacity: disabled ? 0.5 : pressed ? 0.7 : 1,
-              })}
-              className={`flex-row items-center p-5 ${
-                i < 2 ? "border-b border-ink-100" : ""
-              }`}
+              style={{
+                opacity: disabled ? 0.5 : 1,
+                ...(i < 2
+                  ? { borderBottomWidth: 1, borderBottomColor: theme.border }
+                  : {}),
+              }}
+              className="flex-row items-center p-5"
             >
-              <View className="mr-4 h-11 w-11 items-center justify-center rounded-2xl bg-indigo-100">
-                <Ionicons name={action.icon} size={22} color="#6346B8" />
+              <View
+                className="mr-4 h-11 w-11 items-center justify-center rounded-2xl"
+                style={{ backgroundColor: `${theme.primary}20` }}
+              >
+                <Ionicons name={action.icon} size={22} color={theme.primary} />
               </View>
               <View className="flex-1">
-                <Text className="text-[15px] font-semibold text-ink-900">
+                <Text className="text-[15px] font-semibold" style={{ color: theme.text }}>
                   {action.title}
                 </Text>
-                <Text className="mt-1 text-[13px] leading-5 text-ink-500">
+                <Text className="mt-1 text-[13px] leading-5" style={{ color: theme.muted }}>
                   {action.desc}
                 </Text>
               </View>
               {busy ? (
-                <Ionicons name="hourglass" size={16} color="#94a3b8" />
+                <Ionicons name="hourglass" size={16} color={theme.muted} />
               ) : (
-                <Ionicons name="chevron-forward" size={18} color="#64748B" />
+                <Ionicons name="chevron-forward" size={18} color={theme.muted} />
               )}
             </Pressable>
           ))}
         </View>
 
         {/* Privacy note */}
-        <Text className="mt-4 px-1 text-[12px] leading-5 text-ink-400">
+        <Text className="mt-4 px-1 text-[12px] leading-5" style={{ color: theme.muted }}>
           Exports are unencrypted and may include sensitive financial data. Your
           chosen file provider may keep copies in the cloud.
         </Text>
