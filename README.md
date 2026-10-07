@@ -2,9 +2,9 @@
 
 An offline-first personal budget tracker built with Expo SDK 57 (Expo 57.0.20), React Native 0.86.3, React 19.2.3, Expo Router 57, NativeWind 4, and Zustand.
 
-## Version 1.1.0
+## Version 2.0
 
-The app's display/release version is `1.1.0`, configured by `expo.version` in `app.json`. The npm package version in `package.json` remains `1.0.0` and is not the app's display version.
+The app's display/release version is `2.0`, configured by `expo.version` in `app.json`. The npm package version in `package.json` remains `1.0.0` and is not the app's display version.
 
 - Budgets and expenses use Philippine pesos. Categories are Internet, Electricity, Water Bill, Allowance, Grocery, and Other.
 - New Budget opens with an empty amount; `0.00` is a placeholder, not a prefilled value. Edit Budget prefills the selected budget's amount. Neither budget nor expense forms auto-focus inputs; tap an input to open the keyboard.
