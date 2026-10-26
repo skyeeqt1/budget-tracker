@@ -17,6 +17,7 @@ interface BudgetState {
     id: string,
     data: Partial<Pick<BudgetSheet, "budget" | "startDate" | "endDate">>
   ) => void;
+  addToBudget: (id: string, amount: number) => void;
   addExpense: (expense: NewExpense) => void;
   updateExpense: (id: string, data: Partial<Pick<Expense, "title" | "amount" | "category" | "date">>) => void;
   deleteExpense: (id: string) => void;
@@ -68,6 +69,23 @@ export const useBudgetStore = create<BudgetState>()(
         set((state) => ({
           sheets: state.sheets.map((s) =>
             s.id === id ? { ...s, ...data } : s
+          ),
+        })),
+
+      // Top-up: raise the budget and log a "Cash added" row for Transactions.
+      addToBudget: (id, amount) =>
+        set((state) => ({
+          sheets: state.sheets.map((s) =>
+            s.id === id
+              ? {
+                  ...s,
+                  budget: s.budget + amount,
+                  additions: [
+                    ...(s.additions ?? []),
+                    { id: uid(), amount, createdAt: Date.now() },
+                  ],
+                }
+              : s
           ),
         })),
 

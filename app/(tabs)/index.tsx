@@ -19,6 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import AnimatedNumber from "@/components/AnimatedNumber";
 import BudgetModal from "@/components/BudgetModal";
+import CashAddedItem from "@/components/CashAddedItem";
 import ConfirmModal from "@/components/ConfirmModal";
 import ProgressBar from "@/components/ProgressBar";
 import TransactionItem from "@/components/TransactionItem";
@@ -31,11 +32,10 @@ import {
 } from "@/lib/format";
 import { useThemeStore } from "@/store/useThemeStore";
 import {
-  sortNewest,
   useActiveSheet,
   useBudgetStore,
 } from "@/store/useBudgetStore";
-import { Expense } from "@/types";
+import { BudgetAddition, Expense } from "@/types";
 
 function darkenColor(hex: string, factor: number): string {
   const r = parseInt(hex.slice(1, 3), 16);
@@ -51,7 +51,7 @@ cssInterop(LinearGradient, { className: "style" });
 export default function DashboardScreen() {
   const { sheet, summary, periodExpenses } = useActiveSheet();
   const deleteExpense = useBudgetStore((s) => s.deleteExpense);
-  const updateBudgetSheet = useBudgetStore((s) => s.updateBudgetSheet);
+  const addToBudget = useBudgetStore((s) => s.addToBudget);
   const { theme } = useThemeStore();
 
   const [addModalVisible, setAddModalVisible] = useState(false);
@@ -64,10 +64,23 @@ export default function DashboardScreen() {
   const [addBudgetError, setAddBudgetError] = useState<string | null>(null);
   const addBudgetSheet = useKeyboardSheet(addBudgetVisible);
 
-  const recent = useMemo(
-    () => sortNewest(periodExpenses),
-    [periodExpenses]
-  );
+  // Expenses and cash additions merged newest-first for the Transactions list.
+  const recent = useMemo(() => {
+    const pad = (n: number) => String(n).padStart(15, "0");
+    const rows = [
+      ...periodExpenses.map((e) => ({
+        key: e.id,
+        time: `${e.date}|${pad(e.createdAt)}`,
+        expense: e,
+      })),
+      ...(sheet?.additions ?? []).map((a: BudgetAddition) => ({
+        key: a.id,
+        time: `${new Date(a.createdAt).toISOString().slice(0, 10)}|${pad(a.createdAt)}`,
+        addition: a,
+      })),
+    ];
+    return rows.sort((a, b) => b.time.localeCompare(a.time));
+  }, [periodExpenses, sheet]);
 
   const handleDelete = (id: string) => {
     setDeleteTarget(id);
@@ -98,7 +111,7 @@ export default function DashboardScreen() {
       setAddBudgetError("Please enter a valid amount.");
       return;
     }
-    updateBudgetSheet(sheet.id, { budget: sheet.budget + parsed });
+    addToBudget(sheet.id, parsed);
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setAddBudgetVisible(false);
     setAddBudgetAmount("");
@@ -407,15 +420,19 @@ export default function DashboardScreen() {
                   </Text>
                 </View>
               ) : (
-                recent.map((expense) => (
-                  <TransactionItem
-                    key={expense.id}
-                    expense={expense}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    showDate
-                  />
-                ))
+                recent.map((row) =>
+                  "expense" in row ? (
+                    <TransactionItem
+                      key={row.key}
+                      expense={row.expense}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      showDate
+                    />
+                  ) : (
+                    <CashAddedItem key={row.key} addition={row.addition} showDate />
+                  )
+                )
               )}
             </ScrollView>
           </View>
