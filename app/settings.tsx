@@ -54,8 +54,15 @@ export default function SettingsScreen() {
   useLayoutEffect(() => {
     const nav = navigation;
     if (!nav) return;
-    nav.addListener("beforeRemove", handleBeforeRemove);
-    return () => nav.removeListener("beforeRemove", handleBeforeRemove);
+    // SDK 58 Strict TS: typed route event maps omit the stack-level
+    // beforeRemove guard, so widen just this listener to the runtime shape.
+    const guarded = nav as unknown as {
+      addListener: (
+        event: "beforeRemove",
+        callback: (e: { preventDefault: () => void }) => void,
+      ) => () => void;
+    };
+    return guarded.addListener("beforeRemove", handleBeforeRemove);
   }, [navigation, handleBeforeRemove]);
 
   const handleData = async (action: "backup" | "restore") => {

@@ -8,14 +8,17 @@ type IoniconName = keyof typeof Ionicons.glyphMap;
 
 interface TabIconProps {
   focused: boolean;
-  color: ColorValue;
+  color: ColorValue | null;
   size: number;
   active: IoniconName;
   inactive: IoniconName;
 }
 
 function TabIcon({ focused, color, size, active, inactive }: TabIconProps) {
-  return <Ionicons name={focused ? active : inactive} size={size} color={color} />;
+  // SDK 58 Strict TS: tab tint can be null or a processed color number; icons
+  // only accept string | NativeColorValue, and runtime tab tints are strings.
+  const iconColor = typeof color === "number" ? undefined : (color ?? undefined);
+  return <Ionicons name={focused ? active : inactive} size={size} color={iconColor} />;
 }
 
 export default function TabLayout() {

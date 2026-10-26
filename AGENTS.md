@@ -4,11 +4,11 @@
 Always use caveman mode. Default level: full.
 
 ## Tech Stack
-- Expo SDK 57 (expo 57.0.20), React Native 0.86.3, React 19.2.3, TypeScript 6.0, expo-router 57, NativeWind 4 (Tailwind 3), Zustand + AsyncStorage persistence.
+- Expo SDK 58 (expo 58.0.19), React Native 0.88.0, React 19.3.0, TypeScript 6.0, expo-router 58, NativeWind 4 (Tailwind 3), Zustand + AsyncStorage persistence.
 
 ## Versioned Docs
-- This project targets Expo SDK 57. Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before writing any code.
-- SDK 57 requires Node.js 22.13+ and iOS 16.4+; native iOS builds require Xcode 26.4+ (macOS or EAS Build).
+- This project targets Expo SDK 58. Read the exact versioned docs at https://docs.expo.dev/versions/v58.0.0/ before writing any code.
+- SDK 58 requires Node.js 22.13+ (even-numbered lines 22/24/26) and iOS 16.4+; native iOS builds require Xcode 26.4+ (macOS or EAS Build). SDK 58 enables React Native Strict TypeScript by default — `npx tsc --noEmit` must stay clean.
 
 ## Commands (run after code changes)
 - `npx tsc --noEmit` — type check
@@ -27,7 +27,8 @@ Always use caveman mode. Default level: full.
 - Entities:
   - `BudgetSheet` — single-day budget: `startDate === endDate` at creation.
   - `Expense` — bound to a sheet via required `sheetId`.
-- Keep animation dependencies aligned with SDK 57: `react-native-reanimated@4.5.1` and `react-native-worklets@0.10.1`. Use `npx expo install --check` to verify alignment.
+- Budget top-ups ("Add to budget") append optional `{ id, amount, createdAt }` records to the sheet's `additions` array (never a new store key). They render as green "Cash added  +₱…" rows in Home Transactions, are never counted as expenses, and the optional field keeps pre-additions version-3 data/restores valid. `parseBudgetStorage` validates additions only when present; absence stays valid.
+- Keep animation dependencies aligned with SDK 58: `react-native-reanimated@4.7.1` and `react-native-worklets@0.13.0`. Use `npx expo install --check` to verify alignment.
 
 ## Business Rules
 - User is a single person in the Philippines → currency is PHP (₱), no greeting/avatar.
@@ -75,7 +76,7 @@ Always use caveman mode. Default level: full.
 - Logo: `assets/images/tracker-logo.png` (1254×1254). Native splash uses `imageWidth: 200`; keep the in-app `AppSplash` logo size identical (200px) to avoid a size jump.
 
 ## Builds / Native
-- Preserve the managed/CNG workflow: generated `android` and `ios` folders are ignored and must not be committed. SDK 57 requires the New Architecture and Android edge-to-edge; do not restore removed `newArchEnabled` or `edgeToEdgeEnabled` flags.
+- Preserve the managed/CNG workflow: generated `android` and `ios` folders are ignored and must not be committed. SDK 58 requires the New Architecture and Android edge-to-edge; do not restore removed `newArchEnabled` or `edgeToEdgeEnabled` flags.
 - `app.json` requires `softwareKeyboardLayoutMode: "resize"` and the splash/icon/adaptive-icon images.
 - EAS lockfile/build install is sensitive: `package-lock.json` must be committed; `@emnapi/*` deps are pinned via `overrides` + devDependencies — do not remove.
 - A native APK only reproduces what was baked in at build time; JS-only changes require a rebuild/reinstall. Live Expo Go (QR) shows latest code.
