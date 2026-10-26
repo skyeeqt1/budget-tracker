@@ -30,6 +30,20 @@ function isDate(value: unknown): value is string {
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
+/** Optional sheet.additions entries; absent arrays stay valid for older data. */
+function isAdditions(value: unknown): boolean {
+  if (!Array.isArray(value)) return false;
+  const ids = new Set<string>();
+  for (const item of value) {
+    if (!isRecord(item) || !isText(item.id) || ids.has(item.id) ||
+        !isAmount(item.amount) || !isTimestamp(item.createdAt)) {
+      return false;
+    }
+    ids.add(item.id);
+  }
+  return true;
+}
+
 /** Shared by startup and restore; never repair or guess record relationships. */
 export function parseBudgetStorage(raw: string): { version: 3; state: PersistedBudget } {
   const parsed: unknown = JSON.parse(raw);
@@ -50,6 +64,9 @@ export function parseBudgetStorage(raw: string): { version: 3; state: PersistedB
         !isAmount(sheet.budget) || !isDate(sheet.startDate) || !isDate(sheet.endDate) ||
         sheet.endDate < sheet.startDate || !isTimestamp(sheet.createdAt)) {
       throw new Error("Invalid or duplicate budget sheet in backup.");
+    }
+    if ("additions" in sheet && !isAdditions(sheet.additions)) {
+      throw new Error("Invalid budget additions in backup.");
     }
     sheetIds.add(sheet.id);
   }

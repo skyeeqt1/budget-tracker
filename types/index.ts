@@ -16,12 +16,20 @@ export interface Expense {
   createdAt: number; // epoch ms, used for stable ordering
 }
 
+export interface BudgetAddition {
+  id: string;
+  amount: number; // always positive
+  createdAt: number; // epoch ms
+}
+
 export interface BudgetSheet {
   id: string;
   budget: number;
   startDate: string; // "YYYY-MM-DD"
   endDate: string; // "YYYY-MM-DD"
   createdAt: number;
+  /** Optional so pre-additions v2.0 data validates unchanged. */
+  additions?: BudgetAddition[];
 }
 
 export type NewExpense = Omit<Expense, "id" | "createdAt" | "sheetId">;
